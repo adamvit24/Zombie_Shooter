@@ -1,4 +1,4 @@
-import pygame
+import pygame 
 import random
 
 # Inicializace Pygame
@@ -16,10 +16,10 @@ RED = (255, 0, 0)
 
 # Načtení textur hráče (animace pro všechny směry)
 player_textures = {
-    "right": [pygame.image.load(f"hrac{i}.png") for i in range(1, 4)],
-    "left": [pygame.image.load(f"hrac{i}.png") for i in range(1, 4)],
-    "up": [pygame.image.load(f"hrac{i}.png") for i in range(1, 4)],
-    "down": [pygame.image.load(f"hracvzad{i}.png") for i in range(1, 4)]
+    "right": [pygame.image.load(f"hracvpravo{i}.png") for i in range(1, 4)],
+    "left": [pygame.image.load(f"hracvlevo{i}.png") for i in range(1, 4)],
+    "up": [pygame.image.load(f"hracvzad{i}.png") for i in range(1, 4)],
+    "down": [pygame.image.load(f"hrac{i}.png") for i in range(1, 4)]
 }
 
 # Změna velikosti textur hráče
@@ -74,11 +74,29 @@ while running:
             running = False
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
-                bullets.append({"x": player_x + player_width // 2 - bullet_width // 2, "y": player_y})
+                bullet_dx = 0
+                bullet_dy = 0
+                if player_direction == "up":
+                    bullet_dy = -bullet_speed
+                elif player_direction == "down":
+                    bullet_dy = bullet_speed
+                elif player_direction == "left":
+                    bullet_dx = -bullet_speed
+                elif player_direction == "right":
+                    bullet_dx = bullet_speed
+                bullets.append({"x": player_x + player_width // 2 - bullet_width // 2, "y": player_y + player_height // 2 - bullet_height // 2, "dx": bullet_dx, "dy": bullet_dy})
     
     if not game_over:
         # Pohyb postavy
         keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP]:
+            player_direction = "up"
+        if keys[pygame.K_DOWN]:
+            player_direction = "down"
+        if keys[pygame.K_LEFT]:
+            player_direction = "left"
+        if keys[pygame.K_RIGHT]:
+            player_direction = "right"
         if keys[pygame.K_w]:
             player_y -= player_speed
             player_direction = "up"
@@ -122,8 +140,9 @@ while running:
         
         # Pohyb střel
         for bullet in bullets:
-            bullet["y"] -= bullet_speed
-        
+            bullet["x"] += bullet["dx"]
+            bullet["y"] += bullet["dy"]
+            
         # Kontrola kolize střel s nepřáteli
         for enemy in enemies:
             if enemy["alive"]:
@@ -135,7 +154,7 @@ while running:
                         break
         
         # Odstranění střel mimo obrazovku
-        bullets = [bullet for bullet in bullets if bullet["y"] > 0]
+        bullets = [bullet for bullet in bullets if 0 < bullet["x"] < WIDTH and 0 < bullet["y"] < HEIGHT]
         
         # Vykreslení
         screen.fill(BLACK)
@@ -153,7 +172,7 @@ while running:
         font = pygame.font.Font(None, 74)
         text = font.render("Prohrál jsi", True, RED)
         screen.blit(text, (WIDTH // 2 - 100, HEIGHT // 2 - 50))
-    
+        
     pygame.display.update()
     
 pygame.quit()
