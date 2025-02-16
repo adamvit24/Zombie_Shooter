@@ -13,6 +13,40 @@ pygame.display.set_caption("Zombie Shooter")
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+
+# Font
+font = pygame.font.Font(None, 74)
+
+# Funkce pro vykreslení tlačítek
+def draw_button(text, color, x, y, width, height):
+    pygame.draw.rect(screen, color, (x, y, width, height))
+    label = font.render(text, True, WHITE)
+    screen.blit(label, (x + (width - label.get_width()) // 2, y + (height - label.get_height()) // 2))
+
+# Hlavní menu
+def main_menu():
+    while True:
+        screen.fill(BLACK)
+        draw_button("Hr\u00e1t", GREEN, WIDTH // 2 - 100, HEIGHT // 2 - 100, 200, 80)
+        draw_button("Ukon\u010dit", RED, WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 80)
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if WIDTH // 2 - 100 <= x <= WIDTH // 2 + 100:
+                    if HEIGHT // 2 - 100 <= y <= HEIGHT // 2 - 20:
+                        return  # Spustí hru
+                    if HEIGHT // 2 + 50 <= y <= HEIGHT // 2 + 130:
+                        pygame.quit()
+                        exit()
+
+# Spustí hlavní menu
+main_menu()
 
 # Načtení textur hráče (animace pro všechny směry)
 player_textures = {
