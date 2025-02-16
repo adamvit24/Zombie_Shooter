@@ -10,29 +10,45 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Zombie Shooter")
 
 # Barvy
-GREEN = (0, 255, 0)
 BLACK = (0, 0, 0)
-RED = (255, 0, 0)
 WHITE = (255, 255, 255)
+RED = (255, 0, 0)
 
-# Načtení textur
-player_texture = pygame.image.load("player1.png")
+# Načtení textur hráče (animace pro všechny směry)
+player_textures = {
+    "right": [pygame.image.load(f"hrac{i}.png") for i in range(1, 4)],
+    "left": [pygame.image.load(f"hrac{i}.png") for i in range(1, 4)],
+    "up": [pygame.image.load(f"hrac{i}.png") for i in range(1, 4)],
+    "down": [pygame.image.load(f"hracvzad{i}.png") for i in range(1, 4)]
+}
+
+# Změna velikosti textur hráče
+player_width, player_height = 100, 150
+for direction in player_textures:
+    player_textures[direction] = [pygame.transform.scale(img, (player_width, player_height)) for img in player_textures[direction]]
+
+# Načtení textur nepřátel
 enemy_texture_alive_right_1 = pygame.image.load("1vpravo.png")
 enemy_texture_alive_right_2 = pygame.image.load("2vpravo.png")
 enemy_texture_alive_left_1 = pygame.image.load("1vlevo.png")
 enemy_texture_alive_left_2 = pygame.image.load("2vlevo.png")
 enemy_texture_dead = pygame.image.load("enemy2.png")
 
+# Změna velikosti textur nepřátel
+enemy_width, enemy_height = 100, 150
+enemy_texture_alive_right_1 = pygame.transform.scale(enemy_texture_alive_right_1, (enemy_width, enemy_height))
+enemy_texture_alive_right_2 = pygame.transform.scale(enemy_texture_alive_right_2, (enemy_width, enemy_height))
+enemy_texture_alive_left_1 = pygame.transform.scale(enemy_texture_alive_left_1, (enemy_width, enemy_height))
+enemy_texture_alive_left_2 = pygame.transform.scale(enemy_texture_alive_left_2, (enemy_width, enemy_height))
+enemy_texture_dead = pygame.transform.scale(enemy_texture_dead, (enemy_width, enemy_height))
+
 # Parametry postavy
-player_width = 50
-player_height = 70
-player_x = WIDTH // 2
-player_y = HEIGHT // 2
-player_speed = 5
+player_x, player_y = WIDTH // 2, HEIGHT // 2
+player_speed = 10
+player_direction = "down"
+player_frame = 0
 
 # Parametry nepřátel
-enemy_width = 100
-enemy_height = 150
 enemy_speed = 3
 enemies = []
 for _ in range(5):
@@ -43,16 +59,7 @@ for _ in range(5):
 # Parametry střelby
 bullets = []
 bullet_speed = 7
-bullet_width = 10
-bullet_height = 20
-
-# Změna velikosti textur
-player_texture = pygame.transform.scale(player_texture, (player_width, player_height))
-enemy_texture_alive_right_1 = pygame.transform.scale(enemy_texture_alive_right_1, (enemy_width, enemy_height))
-enemy_texture_alive_right_2 = pygame.transform.scale(enemy_texture_alive_right_2, (enemy_width, enemy_height))
-enemy_texture_alive_left_1 = pygame.transform.scale(enemy_texture_alive_left_1, (enemy_width, enemy_height))
-enemy_texture_alive_left_2 = pygame.transform.scale(enemy_texture_alive_left_2, (enemy_width, enemy_height))
-enemy_texture_dead = pygame.transform.scale(enemy_texture_dead, (enemy_width, enemy_height))
+bullet_width, bullet_height = 10, 20
 
 # Hlavní smyčka
 running = True
@@ -74,12 +81,19 @@ while running:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_w]:
             player_y -= player_speed
+            player_direction = "up"
         if keys[pygame.K_s]:
             player_y += player_speed
+            player_direction = "down"
         if keys[pygame.K_a]:
             player_x -= player_speed
+            player_direction = "left"
         if keys[pygame.K_d]:
             player_x += player_speed
+            player_direction = "right"
+        
+        # Animace hráče
+        player_frame = (frame_counter // 10) % 3
         
         # Omezení pohybu na obrazovku
         player_x = max(0, min(WIDTH - player_width, player_x))
@@ -88,7 +102,6 @@ while running:
         # Pohyb nepřátel směrem k hráči
         for enemy in enemies:
             if enemy["alive"]:
-                previous_x = enemy["x"]
                 if enemy["x"] < player_x:
                     enemy["x"] += enemy_speed
                     enemy["direction"] = "right"
@@ -126,13 +139,10 @@ while running:
         
         # Vykreslení
         screen.fill(BLACK)
-        screen.blit(player_texture, (player_x, player_y))
+        screen.blit(player_textures[player_direction][player_frame], (player_x, player_y))
         for enemy in enemies:
             if enemy["alive"]:
-                if enemy["direction"] == "right":
-                    texture = enemy_texture_alive_right_1 if enemy["frame"] == 0 else enemy_texture_alive_right_2
-                else:
-                    texture = enemy_texture_alive_left_1 if enemy["frame"] == 0 else enemy_texture_alive_left_2
+                texture = enemy_texture_alive_right_1 if enemy["frame"] == 0 else enemy_texture_alive_right_2 if enemy["direction"] == "right" else enemy_texture_alive_left_1 if enemy["frame"] == 0 else enemy_texture_alive_left_2
                 screen.blit(texture, (enemy["x"], enemy["y"]))
             else:
                 screen.blit(enemy_texture_dead, (enemy["x"], enemy["y"]))
