@@ -102,6 +102,7 @@ frame_counter = 0
 while running:
     pygame.time.delay(30)  # Zpomalení smyčky
     frame_counter += 1
+    moving = False
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -125,27 +126,39 @@ while running:
         keys = pygame.key.get_pressed()
         if keys[pygame.K_UP]:
             player_direction = "up"
+            moving = True
         if keys[pygame.K_DOWN]:
             player_direction = "down"
+            moving = True
         if keys[pygame.K_LEFT]:
             player_direction = "left"
+            moving = True
         if keys[pygame.K_RIGHT]:
             player_direction = "right"
+            moving = True
         if keys[pygame.K_w]:
             player_y -= player_speed
             player_direction = "up"
+            moving = True
         if keys[pygame.K_s]:
             player_y += player_speed
             player_direction = "down"
+            moving = True
         if keys[pygame.K_a]:
             player_x -= player_speed
             player_direction = "left"
+            moving = True
         if keys[pygame.K_d]:
             player_x += player_speed
             player_direction = "right"
+            moving = True
         
         # Animace hráče
-        player_frame = (frame_counter // 10) % 3
+        if moving:
+            player_frame = (frame_counter // 10) % 3
+        else:
+            player_frame = 0
+        
         
         # Omezení pohybu na obrazovku
         player_x = max(0, min(WIDTH - player_width, player_x))
@@ -210,3 +223,4 @@ while running:
     pygame.display.update()
     
 pygame.quit()
+
