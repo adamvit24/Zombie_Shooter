@@ -14,6 +14,8 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 RED = (255, 0, 0)
 GREEN = (0, 255, 0)
+YELLOW = (232, 215, 10)
+BLUE = (10, 111, 232)
 
 # Font
 font = pygame.font.Font(None, 74)
@@ -28,7 +30,7 @@ def draw_button(text, color, x, y, width, height):
 def main_menu():
     while True:
         screen.fill(BLACK)
-        draw_button("Hr\u00e1t", GREEN, WIDTH // 2 - 100, HEIGHT // 2 - 100, 200, 80)
+        draw_button("Hr\u00e1t", GREEN, WIDTH // 2 - 100, HEIGHT // 2 - 100, 200, 80) 
         draw_button("Ukon\u010dit", RED, WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 80)
         pygame.display.update()
 
@@ -85,10 +87,24 @@ player_frame = 0
 # Parametry nepřátel
 enemy_speed = 3
 enemies = []
-for _ in range(5):
-    enemy_x = random.randint(0, WIDTH - enemy_width)
-    enemy_y = random.randint(0, HEIGHT - enemy_height)
-    enemies.append({"x": enemy_x, "y": enemy_y, "alive": True, "frame": 0, "direction": "right"})
+wave = 1
+spawned_zombies = 0
+zombies_per_wave = 15
+zombies_per_spawn = 3
+spawn_timer = 2
+spawn_interval = 60 # Počet snímků mezi spawnem další skupiny
+def spawn_enemies(count):
+    global spawned_zombies
+    safe_distance = 100  # Minimální vzdálenost od hráče
+    for _ in range(count):
+        if spawned_zombies < zombies_per_wave:
+            enemy_x = random.randint(0, WIDTH - enemy_width)
+            enemy_y = random.randint(0, HEIGHT - enemy_height)
+            enemies.append({"x": enemy_x, "y": enemy_y, "alive": True, "frame": 0, "direction": "right"})
+            spawned_zombies += 1
+                # Kontrola vzdálenosti od hráče
+        if abs(enemy_x - player_x) > safe_distance and abs(enemy_y - player_y) > safe_distance:
+                    break  # Pokud je dostatečně daleko, ukončíme cyklus
 
 # Parametry střelby
 bullets = []
@@ -122,6 +138,19 @@ while running:
                 bullets.append({"x": player_x + player_width // 2 - bullet_width // 2, "y": player_y + player_height // 2 - bullet_height // 2, "dx": bullet_dx, "dy": bullet_dy})
     
     if not game_over:
+         # Spawnování nepřátel ve vlnách
+        if spawned_zombies < zombies_per_wave:
+            if frame_counter - spawn_timer >= spawn_interval:
+                spawn_enemies(zombies_per_spawn)
+                spawn_timer = frame_counter
+        else:
+            # Pokud jsou všichni zombíci mrtví, posun na další vlnu
+            if all(not enemy["alive"] for enemy in enemies):
+                wave += 1
+                spawned_zombies = 0
+                zombies_per_wave += 15
+                enemies.clear()
+        
         # Pohyb postavy
         keys = pygame.key.get_pressed()
         if keys[pygame.K_UP]:
@@ -215,10 +244,14 @@ while running:
         
         for bullet in bullets:
             pygame.draw.rect(screen, WHITE, (bullet["x"], bullet["y"], bullet_width, bullet_height))
+        
+        text = font.render(f"Wave: {wave}", True, WHITE)
+        screen.blit(text, (50, 50))
     else:
         font = pygame.font.Font(None, 74)
         text = font.render("Prohrál jsi", True, RED)
         screen.blit(text, (WIDTH // 2 - 100, HEIGHT // 2 - 50))
+        
         
     pygame.display.update()
     
