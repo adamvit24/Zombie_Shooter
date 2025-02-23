@@ -64,19 +64,21 @@ for direction in player_textures:
     player_textures[direction] = [pygame.transform.scale(img, (player_width, player_height)) for img in player_textures[direction]]
 
 # Načtení textur nepřátel
-enemy_texture_alive_right_1 = pygame.image.load("1vpravo.png")
-enemy_texture_alive_right_2 = pygame.image.load("2vpravo.png")
-enemy_texture_alive_left_1 = pygame.image.load("1vlevo.png")
-enemy_texture_alive_left_2 = pygame.image.load("2vlevo.png")
+enemy_width, enemy_height = 100, 150
+
 enemy_texture_dead = pygame.image.load("enemy2.png")
+enemy_texture_dead = pygame.transform.scale(enemy_texture_dead, (enemy_width, enemy_height))
+
+enemy_textures = {
+    "right": [pygame.image.load(f"zombievpravo{i}.png") for i in range(1, 4)],
+    "left": [pygame.image.load(f"zombievlevo{i}.png") for i in range(1, 4)],
+    "up": [pygame.image.load(f"zombievzad{i}.png") for i in range(1, 4)],
+    "down": [pygame.image.load(f"zombie{i}.png") for i in range(1, 4)]
+}
 
 # Změna velikosti textur nepřátel
-enemy_width, enemy_height = 100, 150
-enemy_texture_alive_right_1 = pygame.transform.scale(enemy_texture_alive_right_1, (enemy_width, enemy_height))
-enemy_texture_alive_right_2 = pygame.transform.scale(enemy_texture_alive_right_2, (enemy_width, enemy_height))
-enemy_texture_alive_left_1 = pygame.transform.scale(enemy_texture_alive_left_1, (enemy_width, enemy_height))
-enemy_texture_alive_left_2 = pygame.transform.scale(enemy_texture_alive_left_2, (enemy_width, enemy_height))
-enemy_texture_dead = pygame.transform.scale(enemy_texture_dead, (enemy_width, enemy_height))
+for direction in enemy_textures:
+    enemy_textures[direction] = [pygame.transform.scale(img, (enemy_width, enemy_height)) for img in enemy_textures[direction]]
 
 # Parametry postavy
 player_x, player_y = WIDTH // 2, HEIGHT // 2
@@ -202,13 +204,15 @@ while running:
                 elif enemy["x"] > player_x:
                     enemy["x"] -= enemy_speed
                     enemy["direction"] = "left"
-                if enemy["y"] < player_y:
+                if 	enemy["y"] < player_y:
                     enemy["y"] += enemy_speed
+                    enemy["direction"] = "down"
                 elif enemy["y"] > player_y:
                     enemy["y"] -= enemy_speed
+                    enemy["direction"] = "up"
                 
                 # Animace chůze nepřátel
-                enemy["frame"] = (frame_counter // 10) % 2
+                enemy["frame"] = (frame_counter // 10) % 3
                 
                 # Kolize s hráčem
                 if abs(enemy["x"] - player_x) < enemy_width and abs(enemy["y"] - player_y) < enemy_height:
@@ -237,7 +241,16 @@ while running:
         screen.blit(player_textures[player_direction][player_frame], (player_x, player_y))
         for enemy in enemies:
             if enemy["alive"]:
-                texture = enemy_texture_alive_right_1 if enemy["frame"] == 0 else enemy_texture_alive_right_2 if enemy["direction"] == "right" else enemy_texture_alive_left_1 if enemy["frame"] == 0 else enemy_texture_alive_left_2
+                # kód pro vykreslení živého nepřítele
+                # např. výběr textury podle směru
+                if enemy["direction"] == "right":
+                    texture = enemy_textures["right"][enemy["frame"]]
+                elif enemy["direction"] == "left":
+                        texture = enemy_textures["left"][enemy["frame"]]
+                elif enemy["direction"] == "up":
+                    texture = enemy_textures["up"][enemy["frame"]]
+                else:  # "down"
+                    texture = enemy_textures["down"][enemy["frame"]]
                 screen.blit(texture, (enemy["x"], enemy["y"]))
             else:
                 screen.blit(enemy_texture_dead, (enemy["x"], enemy["y"]))
