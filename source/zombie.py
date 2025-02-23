@@ -79,6 +79,24 @@ enemy_textures = {
 for direction in enemy_textures:
     enemy_textures[direction] = [pygame.transform.scale(img, (enemy_width, enemy_height)) for img in enemy_textures[direction]]
 
+# Načtení textur minibosse
+miniboss_textures = {
+    "right": [pygame.image.load(f"zombievpravo{i}.png") for i in range(1, 4)],
+    "left": [pygame.image.load(f"zombievlevo{i}.png") for i in range(1, 4)],
+    "up": [pygame.image.load(f"zombievzad{i}.png") for i in range(1, 4)],
+    "down": [pygame.image.load(f"zombie{i}.png") for i in range(1, 4)]
+}
+
+# Parametry minibosse
+miniboss_width, miniboss_height = 150, 200
+miniboss_speed = 2
+miniboss_health = 100
+
+# Změna velikosti textur minibosse
+for direction in miniboss_textures:
+    miniboss_textures[direction] = [pygame.transform.scale(img, (miniboss_width, miniboss_height)) for img in miniboss_textures[direction]]
+
+
 # Parametry postavy
 player_x, player_y = WIDTH // 2, HEIGHT // 2
 player_speed = 10
@@ -113,6 +131,20 @@ bullets = []
 bullet_speed = 7
 bullet_width, bullet_height = 10, 20
 
+# Funkce pro spawn minibosse
+def spawn_miniboss():
+    miniboss_x = random.randint(0, WIDTH - miniboss_width)
+    miniboss_y = random.randint(0, HEIGHT - miniboss_height)
+    miniboss = {
+        "x": miniboss_x,
+        "y": miniboss_y,
+        "alive": True,
+        "health": miniboss_health,
+        "frame": 0,
+        "direction": "right"
+    }
+    return miniboss
+
 # Hlavní smyčka
 running = True
 game_over = False
@@ -141,17 +173,19 @@ while running:
     
     if not game_over:
          # Spawnování nepřátel ve vlnách
-        if spawned_zombies < zombies_per_wave:
+        if spawned_zombies < zombies_per_wave and miniboss is None:
             if frame_counter - spawn_timer >= spawn_interval:
                 spawn_enemies(zombies_per_spawn)
                 spawn_timer = frame_counter
         else:
-            # Pokud jsou všichni zombíci mrtví, posun na další vlnu
+            # Pokud jsou všichni zombíci mrtví, posun na další vlnu a spawn minibosse
             if all(not enemy["alive"] for enemy in enemies):
-                wave += 1
-                spawned_zombies = 0
-                zombies_per_wave += 15
-                enemies.clear()
+                if miniboss is None:  # Spawn minibosse na konci vlny
+                     miniboss = spawn_miniboss()
+                     wave += 1
+                     spawned_zombies = 0
+                     zombies_per_wave += 15
+                     enemies.clear()
         
         # Pohyb postavy
         keys = pygame.key.get_pressed()
@@ -221,6 +255,32 @@ while running:
                     enemy["y"] + enemy_height > player_y):
                     game_over = True
         
+                # Pohyb minibosse
+        if miniboss and miniboss["alive"]:
+            if miniboss["x"] < player_x:
+                miniboss["x"] += miniboss_speed
+                miniboss["direction"] = "right"
+            elif miniboss["x"] > player_x:
+                miniboss["x"] -= miniboss_speed
+                miniboss["direction"] = "left"
+            if miniboss["y"] < player_y:
+                miniboss["y"] += miniboss_speed
+                miniboss["direction"] = "down"
+            elif miniboss["y"] > player_y:
+                miniboss["y"] -= miniboss_speed
+                miniboss["direction"] = "up"
+
+            # Animace minibosse
+            miniboss["frame"] = (frame_counter // 10) % 3
+
+            # Kolize minibosse s hráčem
+            if (miniboss["x"] < player_x + player_width and
+                miniboss["x"] + miniboss_width > player_x and
+                miniboss["y"] < player_y + player_height and
+                miniboss["y"] + miniboss_height > player_y):
+                game_over = True
+        
+        
         # Pohyb střel
         for bullet in bullets:
             bullet["x"] += bullet["dx"]
@@ -238,6 +298,11 @@ while running:
         
         # Odstranění střel mimo obrazovku
         bullets = [bullet for bullet in bullets if 0 < bullet["x"] < WIDTH and 0 < bullet["y"] < HEIGHT]
+        
+        # Vykreslení minibosse
+        if miniboss and miniboss["alive"]:
+            miniboss_texture = miniboss_textures[miniboss["direction"]][miniboss["frame"]]
+            screen.blit(miniboss_texture, (miniboss["x"], miniboss["y"]))
         
         # Vykreslení
         screen.fill(BLACK)
