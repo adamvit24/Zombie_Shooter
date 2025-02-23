@@ -97,16 +97,17 @@ spawn_timer = 2
 spawn_interval = 60 # Počet snímků mezi spawnem další skupiny
 def spawn_enemies(count):
     global spawned_zombies
-    safe_distance = 100  # Minimální vzdálenost od hráče
+    safe_distance = 150  # Větší minimální vzdálenost od hráče
     for _ in range(count):
         if spawned_zombies < zombies_per_wave:
-            enemy_x = random.randint(0, WIDTH - enemy_width)
-            enemy_y = random.randint(0, HEIGHT - enemy_height)
-            enemies.append({"x": enemy_x, "y": enemy_y, "alive": True, "frame": 0, "direction": "right"})
-            spawned_zombies += 1
-                # Kontrola vzdálenosti od hráče
-        if abs(enemy_x - player_x) > safe_distance and abs(enemy_y - player_y) > safe_distance:
-                    break  # Pokud je dostatečně daleko, ukončíme cyklus
+            while True:
+                enemy_x = random.randint(0, WIDTH - enemy_width)
+                enemy_y = random.randint(0, HEIGHT - enemy_height)
+                # Kontrola, zda je zombík dostatečně daleko od hráče
+                if abs(enemy_x - player_x) > safe_distance and abs(enemy_y - player_y) > safe_distance:
+                    enemies.append({"x": enemy_x, "y": enemy_y, "alive": True, "frame": 0, "direction": "right"})
+                    spawned_zombies += 1
+                    break
 
 # Parametry střelby
 bullets = []
@@ -215,7 +216,10 @@ while running:
                 enemy["frame"] = (frame_counter // 10) % 3
                 
                 # Kolize s hráčem
-                if abs(enemy["x"] - player_x) < enemy_width and abs(enemy["y"] - player_y) < enemy_height:
+                if (enemy["x"] < player_x + player_width and
+                    enemy["x"] + enemy_width > player_x and
+                    enemy["y"] < player_y + player_height and
+                    enemy["y"] + enemy_height > player_y):
                     game_over = True
         
         # Pohyb střel
