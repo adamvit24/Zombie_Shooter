@@ -59,12 +59,12 @@ player_textures = {
 }
 
 # Změna velikosti textur hráče
-player_width, player_height = 100, 150
+player_width, player_height = 80, 120
 for direction in player_textures:
     player_textures[direction] = [pygame.transform.scale(img, (player_width, player_height)) for img in player_textures[direction]]
 
 # Načtení textur nepřátel
-enemy_width, enemy_height = 100, 130
+enemy_width, enemy_height = 80, 120
 enemy_texture_dead = pygame.image.load("zombiedead.png")
 enemy_texture_dead = pygame.transform.scale(enemy_texture_dead, (enemy_width, enemy_height))
 
@@ -88,7 +88,7 @@ miniboss_textures = {
 }
 
 # Parametry minibosse
-miniboss_width, miniboss_height = 150, 200
+miniboss_width, miniboss_height = 200, 250
 miniboss_speed = 2
 miniboss_health = 20
 
@@ -99,7 +99,7 @@ for direction in miniboss_textures:
 
 # Parametry postavy
 player_x, player_y = WIDTH // 2, HEIGHT // 2
-player_speed = 10
+player_speed = 8
 player_direction = "down"
 player_frame = 0
 
