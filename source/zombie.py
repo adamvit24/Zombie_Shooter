@@ -133,15 +133,25 @@ def spawn_enemies(count):
                 enemy_y = random.randint(0, HEIGHT - enemy_height)
                 # Kontrola, zda je zombík dostatečně daleko od hráče
                 if abs(enemy_x - player_x) > safe_distance and abs(enemy_y - player_y) > safe_distance:
-                    enemies.append({"x": enemy_x, "y": enemy_y, "alive": True, "frame": 0, "direction": "right"})
-                    spawned_zombies += 1
-                    break
+                    # Kontrola, zda místo není obsazeno překážkou
+                    zombie_rect = pygame.Rect(enemy_x, enemy_y, enemy_width, enemy_height)
+                    collision_with_obstacle = False
+                    for obstacle in obstacles:
+                        if zombie_rect.colliderect(obstacle):
+                            collision_with_obstacle = True
+                            break
+                    if not collision_with_obstacle:
+                        enemies.append({"x": enemy_x, "y": enemy_y, "alive": True, "frame": 0, "direction": "right"})
+                        spawned_zombies += 1
+                        break
+                
 
 # Parametry střelby
 bullets = []
 bullet_speed = 7
 bullet_width, bullet_height = 10, 20
 
+# Funkce pro kontrolu kolize hráče s překážkami
 def check_collision(x, y, dx, dy):
     new_rect = pygame.Rect(x + dx, y + dy, player_width, player_height)
     for obstacle in obstacles:
@@ -149,19 +159,50 @@ def check_collision(x, y, dx, dy):
             return False  # Kolize, pohyb není možný
     return True
 
+# Funkce pro kontrolu kolize zombie s	 překážkami
+def check_collision_enemy(x, y, dx, dy):
+    new_rect = pygame.Rect(x + dx, y + dy, enemy_width, enemy_height)
+    for obstacle in obstacles:
+        if new_rect.colliderect(obstacle):
+            return False  # Kolize, pohyb není možný
+    return True
+
+# Funkce pro kontrolu kolize minibosse s překážkami
+def check_collision_miniboss(x, y, dx, dy):
+    new_rect = pygame.Rect(x + dx, y + dy, miniboss_width, miniboss_height)
+    for obstacle in obstacles:
+        if new_rect.colliderect(obstacle):
+            return False  # Kolize, pohyb není možný
+    return True
+
+
 # Funkce pro spawn minibosse
 def spawn_miniboss():
     miniboss_x = random.randint(0, WIDTH - miniboss_width)
     miniboss_y = random.randint(0, HEIGHT - miniboss_height)
-    miniboss = {
-        "x": miniboss_x,
-        "y": miniboss_y,
-        "alive": True,
-        "health": miniboss_health,
-        "frame": 0,
-        "direction": "right"
-    }
-    return miniboss
+    miniboss_rect = pygame.Rect(miniboss_x, miniboss_y, miniboss_width, miniboss_height)
+      # Zkontrolujeme, zda miniboss není spawnován v překážkách
+    collision_with_obstacle = False
+    for obstacle in obstacles:
+        if miniboss_rect.colliderect(obstacle):
+            collision_with_obstacle = True
+            break
+             # Zkontrolujeme, zda miniboss není spawnován příliš blízko hráče
+    collision_with_player = False
+    player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+    if miniboss_rect.colliderect(player_rect):
+        collision_with_player = True
+        
+    if not collision_with_obstacle and not collision_with_player:
+        miniboss = {
+            "x": miniboss_x,
+            "y": miniboss_y,
+            "alive": True,
+            "health": miniboss_health,
+            "frame": 0,
+            "direction": "right"
+        }
+        return miniboss
 
 # Hlavní smyčka
 running = True
@@ -209,16 +250,16 @@ while running:
         else:
             # Zpracování minibosse, pokud existuje
             if miniboss and miniboss["alive"]:
-                if miniboss["x"] < player_x:
+                if miniboss["x"] < player_x and check_collision_miniboss(miniboss["x"], miniboss["y"], miniboss_speed, 0):
                     miniboss["x"] += miniboss_speed
                     miniboss["direction"] = "right"
-                elif miniboss["x"] > player_x:
+                elif miniboss["x"] > player_x and check_collision_miniboss(miniboss["x"], miniboss["y"], -miniboss_speed, 0):
                     miniboss["x"] -= miniboss_speed
                     miniboss["direction"] = "left"
-                if miniboss["y"] < player_y:
+                if miniboss["y"] < player_y and check_collision_miniboss(miniboss["x"], miniboss["y"], 0, miniboss_speed):
                     miniboss["y"] += miniboss_speed
                     miniboss["direction"] = "down"
-                elif miniboss["y"] > player_y:
+                elif miniboss["y"] > player_y and check_collision_miniboss(miniboss["x"], miniboss["y"], 0, -miniboss_speed):
                     miniboss["y"] -= miniboss_speed
                     miniboss["direction"] = "up"
                 miniboss["frame"] = (frame_counter // 10) % 3
@@ -275,16 +316,16 @@ while running:
 
         for enemy in enemies:
             if enemy["alive"]:
-                if enemy["x"] < player_x:
+                if enemy["x"] < player_x and check_collision_enemy(enemy["x"], enemy["y"], enemy_speed, 0):
                     enemy["x"] += enemy_speed
                     enemy["direction"] = "right"
-                elif enemy["x"] > player_x:
+                elif enemy["x"] > player_x and check_collision_enemy(enemy["x"], enemy["y"], -enemy_speed, 0):
                     enemy["x"] -= enemy_speed
                     enemy["direction"] = "left"
-                if enemy["y"] < player_y:
+                if enemy["y"] < player_y and check_collision_enemy(enemy["x"], enemy["y"], 0, enemy_speed):
                     enemy["y"] += enemy_speed
                     enemy["direction"] = "down"
-                elif enemy["y"] > player_y:
+                elif enemy["y"] > player_y and check_collision_enemy(enemy["x"], enemy["y"], 0, -enemy_speed):
                     enemy["y"] -= enemy_speed
                     enemy["direction"] = "up"
                 enemy["frame"] = (frame_counter // 10) % 3
@@ -294,6 +335,7 @@ while running:
                     enemy["y"] < player_y + player_height and
                     enemy["y"] + enemy_height > player_y):
                     game_over = True
+            
 
         for bullet in bullets[:]:
             bullet["x"] += bullet["dx"]
@@ -356,6 +398,6 @@ while running:
         
     pygame.display.update()
     
-pygame.quit()
+pygame.quit()	
 
 
