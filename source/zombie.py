@@ -87,6 +87,18 @@ miniboss_textures = {
     "down": [pygame.image.load(f"zombie{i}.png") for i in range(1, 4)]
 }
 
+# Načtení textur překážek
+obstacle_texture = pygame.image.load("Bedna.png")
+obstacle_size = (100, 100)
+obstacle_texture = pygame.transform.scale(obstacle_texture, obstacle_size)
+
+# Seznam překážek
+obstacles = [
+    pygame.Rect(400, 300, *obstacle_size),
+    pygame.Rect(800, 600, *obstacle_size),
+    pygame.Rect(1200, 400, *obstacle_size)
+]
+
 # Parametry minibosse
 miniboss_width, miniboss_height = 200, 250
 miniboss_speed = 2
@@ -96,9 +108,8 @@ miniboss_health = 20
 for direction in miniboss_textures:
     miniboss_textures[direction] = [pygame.transform.scale(img, (miniboss_width, miniboss_height)) for img in miniboss_textures[direction]]
 
-
 # Parametry postavy
-player_x, player_y = WIDTH // 2, HEIGHT // 2
+player = player_x, player_y = WIDTH // 2, HEIGHT // 2
 player_speed = 8
 player_direction = "down"
 player_frame = 0
@@ -130,6 +141,13 @@ def spawn_enemies(count):
 bullets = []
 bullet_speed = 7
 bullet_width, bullet_height = 10, 20
+
+def check_collision(x, y, dx, dy):
+    new_rect = pygame.Rect(x + dx, y + dy, player_width, player_height)
+    for obstacle in obstacles:
+        if new_rect.colliderect(obstacle):
+            return False  # Kolize, pohyb není možný
+    return True
 
 # Funkce pro spawn minibosse
 def spawn_miniboss():
@@ -230,19 +248,19 @@ while running:
         if keys[pygame.K_RIGHT]:
             player_direction = "right"
             moving = True
-        if keys[pygame.K_w]:
+        if keys[pygame.K_w] and check_collision(player_x, player_y, 0, -player_speed):
             player_y -= player_speed
             player_direction = "up"
             moving = True
-        if keys[pygame.K_s]:
+        if keys[pygame.K_s] and check_collision(player_x, player_y, 0, player_speed):
             player_y += player_speed
             player_direction = "down"
             moving = True
-        if keys[pygame.K_a]:
+        if keys[pygame.K_a] and check_collision(player_x, player_y, -player_speed, 0):
             player_x -= player_speed
             player_direction = "left"
             moving = True
-        if keys[pygame.K_d]:
+        if keys[pygame.K_d] and check_collision(player_x, player_y, player_speed, 0):
             player_x += player_speed
             player_direction = "right"
             moving = True
@@ -303,6 +321,10 @@ while running:
 
         screen.fill(BLACK)
         screen.blit(player_textures[player_direction][player_frame], (player_x, player_y))
+        # Vykreslení překážek
+        for obstacle in obstacles:
+            screen.blit(obstacle_texture, (obstacle.x, obstacle.y))
+
         for enemy in enemies:
             if enemy["alive"]:
                 if enemy["direction"] == "right":
@@ -323,7 +345,7 @@ while running:
 
         for bullet in bullets:
             pygame.draw.rect(screen, WHITE, (bullet["x"], bullet["y"], bullet_width, bullet_height))
-
+            
         text = font.render(f"Wave: {wave}", True, WHITE)
         screen.blit(text, (50, 50))
     else:
@@ -335,4 +357,5 @@ while running:
     pygame.display.update()
     
 pygame.quit()
+
 
