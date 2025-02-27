@@ -30,8 +30,15 @@ def draw_button(text, color, x, y, width, height):
 def main_menu():
     while True:
         screen.fill(BLACK)
-        draw_button("Hr\u00e1t", GREEN, WIDTH // 2 - 100, HEIGHT // 2 - 100, 200, 80) 
-        draw_button("Ukon\u010dit", RED, WIDTH // 2 - 100, HEIGHT // 2 + 50, 200, 80)
+        # Tlačítko "Hrát"
+        draw_button("Hr\u00e1t", GREEN, WIDTH // 2 - 100, HEIGHT // 2 - 150, 200, 80)
+        # Tlačítko "Obchod"
+        draw_button("Obchod", YELLOW, WIDTH // 2 - 100, HEIGHT // 2, 200, 80)
+        # Tlačítko "Nastavení"
+        draw_button("Nastavení", BLUE, WIDTH // 2 - 100, HEIGHT // 2 + 100, 250, 100)
+        # Tlačítko "Ukončit"
+        draw_button("Ukon\u010dit", RED, WIDTH // 2 - 100, HEIGHT // 2 + 220, 200, 80)
+
         pygame.display.update()
 
         for event in pygame.event.get():
@@ -41,10 +48,14 @@ def main_menu():
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
                 if WIDTH // 2 - 100 <= x <= WIDTH // 2 + 100:
-                    if HEIGHT // 2 - 100 <= y <= HEIGHT // 2 - 20:
+                    if HEIGHT // 2 - 150 <= y <= HEIGHT // 2 - 70:
                         return  # Spustí hru
-                    if HEIGHT // 2 + 50 <= y <= HEIGHT // 2 + 130:
-                        pygame.quit()
+                    elif HEIGHT // 2 <= y <= HEIGHT // 2 + 80:
+                        print("Obchod")  # Tlačítko Obchod
+                    elif HEIGHT // 2 + 100 <= y <= HEIGHT // 2 + 200:
+                        print("Nastavení")  # Tlačítko Nastavení
+                    elif HEIGHT // 2 + 200 <= y <= HEIGHT // 2 + 300:
+                        pygame.quit()  # Ukončení hry
                         exit()
 
 # Spustí hlavní menu
