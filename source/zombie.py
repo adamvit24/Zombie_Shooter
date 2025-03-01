@@ -26,16 +26,18 @@ def draw_button(text, color, x, y, width, height):
     label = font.render(text, True, WHITE)
     screen.blit(label, (x + (width - label.get_width()) // 2, y + (height - label.get_height()) // 2))
 
+menu_background = pygame.image.load("Backgroundfinal.png")  # Nahraď názvem souboru
+menu_background = pygame.transform.scale(menu_background, (WIDTH, HEIGHT))
 # Hlavní menu
 def main_menu():
     while True:
-        screen.fill(BLACK)
+        screen.blit(menu_background, (0, 0))
         # Tlačítko "Hrát"
-        draw_button("Hr\u00e1t", GREEN, WIDTH // 2 - 100, HEIGHT // 2 - 150, 200, 80)
+        draw_button("Hr\u00e1t", GREEN, WIDTH // 2 - 100, HEIGHT // 2 - 100, 200, 80)
         # Tlačítko "Obchod"
         draw_button("Obchod", YELLOW, WIDTH // 2 - 100, HEIGHT // 2, 200, 80)
         # Tlačítko "Nastavení"
-        draw_button("Nastavení", BLUE, WIDTH // 2 - 100, HEIGHT // 2 + 100, 250, 100)
+        draw_button("Nastavení", BLUE, WIDTH // 2 - 130, HEIGHT // 2 + 100, 260, 100)
         # Tlačítko "Ukončit"
         draw_button("Ukon\u010dit", RED, WIDTH // 2 - 100, HEIGHT // 2 + 220, 200, 80)
 
@@ -61,6 +63,7 @@ def main_menu():
 # Spustí hlavní menu
 main_menu()
 
+
 # Načtení textur hráče (animace pro všechny směry)
 player_textures = {
     "right": [pygame.image.load(f"hracvpravo{i}.png") for i in range(1, 4)],
@@ -73,6 +76,10 @@ player_textures = {
 player_width, player_height = 80, 120
 for direction in player_textures:
     player_textures[direction] = [pygame.transform.scale(img, (player_width, player_height)) for img in player_textures[direction]]
+
+# Načtení textur mapy
+background = pygame.image.load("airport.png")  # Nahraď názvem svého souboru
+background = pygame.transform.scale(background, (WIDTH, HEIGHT))  # Uprav velikost na rozlišení okna
 
 # Načtení textur nepřátel
 enemy_width, enemy_height = 80, 120
@@ -371,8 +378,8 @@ while running:
                 bullets.remove(bullet)
 
         bullets = [bullet for bullet in bullets if 0 < bullet["x"] < WIDTH and 0 < bullet["y"] < HEIGHT]
-
-        screen.fill(BLACK)
+        
+        screen.blit(background, (0, 0))
         screen.blit(player_textures[player_direction][player_frame], (player_x, player_y))
         # Vykreslení překážek
         for obstacle in obstacles:
@@ -398,7 +405,7 @@ while running:
 
         for bullet in bullets:
             pygame.draw.rect(screen, WHITE, (bullet["x"], bullet["y"], bullet_width, bullet_height))
-            
+        
         text = font.render(f"Wave: {wave}", True, WHITE)
         screen.blit(text, (50, 50))
     else:
