@@ -20,26 +20,43 @@ BLUE = (10, 111, 232)
 # Font
 font = pygame.font.Font(None, 74)
 
-# Funkce pro vykreslení tlačítek
-def draw_button(text, color, x, y, width, height):
-    pygame.draw.rect(screen, color, (x, y, width, height))
-    label = font.render(text, True, WHITE)
-    screen.blit(label, (x + (width - label.get_width()) // 2, y + (height - label.get_height()) // 2))
+# Načtení textur tlačítek
+button_size = (100, 100)  # Čtvercová tlačítka 100x100 px
+button_textures = {
+    "play": pygame.image.load("Play.png"),
+    "shop": pygame.image.load("Market.png"),
+    "settings": pygame.image.load("Settings.png"),
+    "exit": pygame.image.load("Quit.png")
+}
 
+ # Změna velikosti textur na čtverce
+for key in button_textures:
+    button_textures[key] = pygame.transform.scale(button_textures[key], button_size)
+
+
+# Funkce pro vykreslení tlačítek
+def draw_button(texture, x, y):
+    screen.blit(texture, (x, y))
+
+    
 menu_background = pygame.image.load("Backgroundfinal.png")  # Nahraď názvem souboru
 menu_background = pygame.transform.scale(menu_background, (WIDTH, HEIGHT))
 # Hlavní menu
 def main_menu():
     while True:
         screen.blit(menu_background, (0, 0))
-        # Tlačítko "Hrát"
-        draw_button("Hr\u00e1t", GREEN, WIDTH // 2 - 100, HEIGHT // 2 - 100, 200, 80)
-        # Tlačítko "Obchod"
-        draw_button("Obchod", YELLOW, WIDTH // 2 - 100, HEIGHT // 2, 200, 80)
-        # Tlačítko "Nastavení"
-        draw_button("Nastavení", BLUE, WIDTH // 2 - 130, HEIGHT // 2 + 100, 260, 100)
-        # Tlačítko "Ukončit"
-        draw_button("Ukon\u010dit", RED, WIDTH // 2 - 100, HEIGHT // 2 + 220, 200, 80)
+        
+         # Výpočet středu obrazovky
+        x1 = WIDTH - 850  # První sloupec (víc vlevo)
+        x2 = WIDTH - 650  # Druhý sloupec (víc vpravo)
+        y1 = HEIGHT // 2 - 0  # První řada (nahoře)
+        y2 = HEIGHT // 2 + 140   # Druhá řada (dole)
+
+        # Vykreslení tlačítek
+        draw_button(button_textures["play"], x1, y1)
+        draw_button(button_textures["shop"], x2, y1)
+        draw_button(button_textures["settings"], x1, y2)
+        draw_button(button_textures["exit"], x2, y2)
 
         pygame.display.update()
 
@@ -49,17 +66,20 @@ def main_menu():
                 exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
-                if WIDTH // 2 - 100 <= x <= WIDTH // 2 + 100:
-                    if HEIGHT // 2 - 150 <= y <= HEIGHT // 2 - 70:
-                        return  # Spustí hru
-                    elif HEIGHT // 2 <= y <= HEIGHT // 2 + 80:
-                        print("Obchod")  # Tlačítko Obchod
-                    elif HEIGHT // 2 + 100 <= y <= HEIGHT // 2 + 200:
-                        print("Nastavení")  # Tlačítko Nastavení
-                    elif HEIGHT // 2 + 200 <= y <= HEIGHT // 2 + 300:
-                        pygame.quit()  # Ukončení hry
+        # První sloupec (x1)
+                if x1 <= x <= x1 + 100:  
+                    if y1 <= y <= y1 + 100:
+                        print("Spuštění hry")
+                        return
+                    elif y2 <= y <= y2 + 100:
+                        print("Nastavení")
+        # Druhý sloupec (x2)
+                elif x2 <= x <= x2 + 100:
+                    if y1 <= y <= y1 + 100:
+                        print("Obchod")
+                    elif y2 <= y <= y2 + 100:
+                        pygame.quit()
                         exit()
-
 # Spustí hlavní menu
 main_menu()
 
