@@ -121,8 +121,8 @@ for direction in enemy_textures:
 miniboss_textures = {
     "right": [pygame.image.load(f"zombievpravo{i}.png") for i in range(1, 4)],
     "left": [pygame.image.load(f"zombievlevo{i}.png") for i in range(1, 4)],
-    "up": [pygame.image.load(f"zombievzad{i}.png") for i in range(1, 4)],
-    "down": [pygame.image.load(f"zombie{i}.png") for i in range(1, 4)]
+    "up": [pygame.image.load(f"minibossvzad{i}.png") for i in range(1, 4)],
+    "down": [pygame.image.load(f"miniboss{i}.png") for i in range(1, 4)]
 }
 
 # Načtení textur překážek
@@ -186,7 +186,7 @@ def spawn_enemies(count):
 
 # Parametry střelby
 bullets = []
-bullet_speed = 7
+bullet_speed = 15
 bullet_width, bullet_height = 10, 20
 
 # Funkce pro kontrolu kolize hráče s překážkami
@@ -424,7 +424,7 @@ while running:
             screen.blit(miniboss_texture, (miniboss["x"], miniboss["y"]))
 
         for bullet in bullets:
-            pygame.draw.rect(screen, WHITE, (bullet["x"], bullet["y"], bullet_width, bullet_height))
+            pygame.draw.rect(screen, BLACK, (bullet["x"], bullet["y"], bullet_width, bullet_height))
         
         text = font.render(f"Wave: {wave}", True, WHITE)
         screen.blit(text, (50, 50))
