@@ -38,14 +38,15 @@ for key in button_textures:
 def draw_button(texture, x, y):
     screen.blit(texture, (x, y))
 
+shop_open = False
     
 menu_background = pygame.image.load("Backgroundfinal.png")  # Nahraď názvem souboru
 menu_background = pygame.transform.scale(menu_background, (WIDTH, HEIGHT))
 # Hlavní menu
 def main_menu():
+    global shop_open
     while True:
         screen.blit(menu_background, (0, 0))
-        
          # Výpočet středu obrazovky
         x1 = WIDTH - 850  # První sloupec (víc vlevo)
         x2 = WIDTH - 650  # Druhý sloupec (víc vpravo)
@@ -57,6 +58,11 @@ def main_menu():
         draw_button(button_textures["shop"], x2, y1)
         draw_button(button_textures["settings"], x1, y2)
         draw_button(button_textures["exit"], x2, y2)
+        
+        if shop_open:
+            overlay = pygame.Surface((600, 400), pygame.SRCALPHA)
+            overlay.fill((50, 50, 50, 200))  # Šedá barva s průhledností
+            screen.blit(overlay, (WIDTH // 2 - 300, HEIGHT // 2 - 200))
 
         pygame.display.update()
 
@@ -64,6 +70,12 @@ def main_menu():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
+            if shop_open:
+                overlay = pygame.Surface((500, 400))  # Vytvoříme poloprůhledný obdélník
+                overlay.set_alpha(200)  # Nastavíme průhlednost (0-255)
+                overlay.fill((50, 50, 50))  # Šedá barva
+                screen.blit(overlay, (150, 100))  # Umístění overlaye
+        
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
         # První sloupec (x1)
@@ -77,6 +89,7 @@ def main_menu():
                 elif x2 <= x <= x2 + 100:
                     if y1 <= y <= y1 + 100:
                         print("Obchod")
+                        shop_open = True
                     elif y2 <= y <= y2 + 100:
                         pygame.quit()
                         exit()
