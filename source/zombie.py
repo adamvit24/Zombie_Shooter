@@ -33,11 +33,48 @@ button_textures = {
 for key in button_textures:
     button_textures[key] = pygame.transform.scale(button_textures[key], button_size)
 
+# Načtení obrázků zbraní
+weapon_textures = {
+    "Shotgun": pygame.image.load("shotgun.png"),
+    "Assault Rifle": pygame.image.load("assault rifle.png"),
+    "Minigun": pygame.image.load("minigun.png")
+}
 
+for key in weapon_textures:
+    weapon_textures[key] = pygame.transform.scale(weapon_textures[key], (150, 100))
+    
 # Funkce pro vykreslení tlačítek
 def draw_button(texture, x, y):
     screen.blit(texture, (x, y))
-
+    
+def draw_shop():
+        overlay_width, overlay_height = 700, 500  # Zvětšení overlay okna
+        overlay = pygame.Surface((overlay_width, overlay_height))  # Vytvoříme poloprůhledný obdélník
+        overlay.set_alpha(200)  # Nastavíme průhlednost (0-255)
+        overlay.fill((50, 50, 50))  # Šedá barva
+        screen.blit(overlay, (WIDTH // 2 - overlay_width // 2, HEIGHT // 2 - overlay_height // 2))  # Umístění overlaye
+            
+            # Vykreslení textů a mezer
+        text_y_offset = 50  # Zvýšení rozestupů
+        font_large = pygame.font.Font(None, 54)  # Větší font
+        text_surface = font_large.render("SHOP", True, WHITE)
+        screen.blit(text_surface, (WIDTH // 2 - 50, HEIGHT // 2 - overlay_height // 2 + text_y_offset))
+            
+            # Vykreslení zbraní a cen s většími mezerami
+        weapons = ["Shotgun", "Assault Rifle", "Minigun"]
+        prices = [500, 1000, 2000]
+        for i, (weapon, price) in enumerate(zip(weapons, prices)):
+            screen.blit(weapon_textures[weapon], (WIDTH // 2 - 320, HEIGHT // 2,1 - overlay_height // 2 + text_y_offset + (i + 1) * 100))
+            text_surface = font_large.render(f"{weapon}: {price} coins", True, WHITE)
+            screen.blit(text_surface, (WIDTH // 2 - 150, HEIGHT // 2 - overlay_height // 2 + text_y_offset + (i + 1) * 100))
+           
+                # Tlačítko pro zavření obchodu
+        close_button = pygame.Surface((50, 50))
+        close_button.fill(WHITE)
+        screen.blit(close_button, (WIDTH // 2 + overlay_width // 2 - 60, HEIGHT // 2 - overlay_height // 2 + 10))
+        pygame.display.update()
+       
+player_coins = 900  # Hráčovy coiny
 shop_open = False
     
 menu_background = pygame.image.load("Backgroundfinal.png")  # Nahraď názvem souboru
@@ -45,6 +82,7 @@ menu_background = pygame.transform.scale(menu_background, (WIDTH, HEIGHT))
 # Hlavní menu
 def main_menu():
     global shop_open
+    global player_coins
     while True:
         screen.blit(menu_background, (0, 0))
          # Výpočet středu obrazovky
@@ -60,9 +98,7 @@ def main_menu():
         draw_button(button_textures["exit"], x2, y2)
         
         if shop_open:
-            overlay = pygame.Surface((600, 400), pygame.SRCALPHA)
-            overlay.fill((50, 50, 50, 200))  # Šedá barva s průhledností
-            screen.blit(overlay, (WIDTH // 2 - 300, HEIGHT // 2 - 200))
+            draw_shop()
 
         pygame.display.update()
 
@@ -70,16 +106,10 @@ def main_menu():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-            if shop_open:
-                overlay = pygame.Surface((500, 400))  # Vytvoříme poloprůhledný obdélník
-                overlay.set_alpha(200)  # Nastavíme průhlednost (0-255)
-                overlay.fill((50, 50, 50))  # Šedá barva
-                screen.blit(overlay, (150, 100))  # Umístění overlaye
-        
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
-        # První sloupec (x1)
-                if x1 <= x <= x1 + 100:  
+                if x1 <= x <= x1 + 100:
                     if y1 <= y <= y1 + 100:
                         print("Spuštění hry")
                         return
@@ -89,10 +119,16 @@ def main_menu():
                 elif x2 <= x <= x2 + 100:
                     if y1 <= y <= y1 + 100:
                         print("Obchod")
-                        shop_open = True
+                        shop_open = not shop_open
                     elif y2 <= y <= y2 + 100:
                         pygame.quit()
                         exit()
+                        # Zavření obchodu
+                if shop_open and WIDTH // 2 + 290 <= x <= WIDTH // 2 + 340 and HEIGHT // 2 - 240 <= y <= HEIGHT // 2 - 190:
+                    shop_open = False
+
+                        
+                        
 # Spustí hlavní menu
 main_menu()
 
@@ -200,7 +236,7 @@ def spawn_enemies(count):
 # Parametry střelby
 bullets = []
 bullet_speed = 15
-bullet_width, bullet_height = 10, 20
+bullet_width, bullet_height = 10, 10
 
 # Funkce pro kontrolu kolize hráče s překážkami
 def check_collision(x, y, dx, dy):
@@ -450,5 +486,3 @@ while running:
     pygame.display.update()
     
 pygame.quit()	
-
-
