@@ -196,8 +196,8 @@ for direction in enemy_textures:
 
 # Načtení textur minibosse
 miniboss_textures = {
-    "right": [pygame.image.load(f"zombievpravo{i}.png") for i in range(1, 4)],
-    "left": [pygame.image.load(f"zombievlevo{i}.png") for i in range(1, 4)],
+    "right": [pygame.image.load(f"minibossvpravo{i}.png") for i in range(1, 4)],
+    "left": [pygame.image.load(f"minibossvlevo{i}.png") for i in range(1, 4)],
     "up": [pygame.image.load(f"minibossvzad{i}.png") for i in range(1, 4)],
     "down": [pygame.image.load(f"miniboss{i}.png") for i in range(1, 4)]
 }
