@@ -47,6 +47,13 @@ for key in weapon_textures:
 def draw_button(texture, x, y):
     screen.blit(texture, (x, y))
     
+# Ceny zbraní
+weapons = ["Shotgun", "Assault Rifle", "Minigun"]
+prices = {"Shotgun": 500, "Assault Rifle": 1000, "Minigun": 2000}
+player_coins = 3500
+owned_weapons = []
+equipped_weapon = None
+    
 def draw_shop():
         overlay_width, overlay_height = 700, 500  # Zvětšení overlay okna
         overlay = pygame.Surface((overlay_width, overlay_height))  # Vytvoříme poloprůhledný obdélník
@@ -55,26 +62,28 @@ def draw_shop():
         screen.blit(overlay, (WIDTH // 2 - overlay_width // 2, HEIGHT // 2 - overlay_height // 2))  # Umístění overlaye
             
             # Vykreslení textů a mezer
-        text_y_offset = 50  # Zvýšení rozestupů
-        font_large = pygame.font.Font(None, 54)  # Větší font
-        text_surface = font_large.render("SHOP", True, WHITE)
-        screen.blit(text_surface, (WIDTH // 2 - 50, HEIGHT // 2 - overlay_height // 2 + text_y_offset))
+        text_surface = font.render("SHOP", True, WHITE)
+        screen.blit(text_surface, (WIDTH // 2 - 50, HEIGHT // 2 - overlay_height // 2 + 20))
             
             # Vykreslení zbraní a cen s většími mezerami
-        weapons = ["Shotgun", "Assault Rifle", "Minigun"]
-        prices = [500, 1000, 2000]
-        for i, (weapon, price) in enumerate(zip(weapons, prices)):
-            screen.blit(weapon_textures[weapon], (WIDTH // 2 - 320, HEIGHT // 2,1 - overlay_height // 2 + text_y_offset + (i + 1) * 100))
-            text_surface = font_large.render(f"{weapon}: {price} coins", True, WHITE)
-            screen.blit(text_surface, (WIDTH // 2 - 150, HEIGHT // 2 - overlay_height // 2 + text_y_offset + (i + 1) * 100))
-           
-                # Tlačítko pro zavření obchodu
-        close_button = pygame.Surface((50, 50))
-        close_button.fill(WHITE)
-        screen.blit(close_button, (WIDTH // 2 + overlay_width // 2 - 60, HEIGHT // 2 - overlay_height // 2 + 10))
-        pygame.display.update()
-       
-player_coins = 900  # Hráčovy coiny
+        for i, weapon in enumerate(weapons):
+            y_offset = HEIGHT // 2 - overlay_height // 2 + 100 + i * 100
+            screen.blit(weapon_textures[weapon], (WIDTH // 2 - 250, y_offset))
+            text_surface = font.render(f"{weapon}: {prices[weapon]} coins", True, WHITE)
+            screen.blit(text_surface, (WIDTH // 2 - 100, y_offset))
+            
+            button_text = "Buy" if weapon not in owned_weapons else "Equip"
+            button_color = GREEN if weapon not in owned_weapons else BLUE
+            pygame.draw.rect(screen, button_color, (WIDTH // 2 + 150, y_offset, 100, 40))
+            button_surface = font.render(button_text, True, WHITE)
+            screen.blit(button_surface, (WIDTH // 2 + 160, y_offset + 5))            
+   
+                   # Tlačítko pro zavření obchodu
+            close_button = pygame.Surface((50, 50))
+            close_button.fill(RED)
+            screen.blit(close_button, (WIDTH // 2 + overlay_width // 2 - 60, HEIGHT // 2 - overlay_height // 2 + 10))
+            pygame.display.update()
+   
 shop_open = False
     
 menu_background = pygame.image.load("Backgroundfinal.png")  # Nahraď názvem souboru
@@ -83,6 +92,7 @@ menu_background = pygame.transform.scale(menu_background, (WIDTH, HEIGHT))
 def main_menu():
     global shop_open
     global player_coins
+    global equipped_weapon
     while True:
         screen.blit(menu_background, (0, 0))
          # Výpočet středu obrazovky
@@ -109,21 +119,39 @@ def main_menu():
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
-                if x1 <= x <= x1 + 100:
-                    if y1 <= y <= y1 + 100:
-                        print("Spuštění hry")
-                        return
-                    elif y2 <= y <= y2 + 100:
-                        print("Nastavení")
-        # Druhý sloupec (x2)
-                elif x2 <= x <= x2 + 100:
-                    if y1 <= y <= y1 + 100:
-                        print("Obchod")
-                        shop_open = not shop_open
-                    elif y2 <= y <= y2 + 100:
-                        pygame.quit()
-                        exit()
-                        # Zavření obchodu
+                if shop_open:
+                    for i, weapon in enumerate(weapons):
+                        y_offset = HEIGHT // 2 - 250 + 100 + i * 100
+                        if WIDTH // 2 + 150 <= x <= WIDTH // 2 + 250 and y_offset <= y <= y_offset + 40:
+                            if weapon not in owned_weapons:
+                                if player_coins >= prices[weapon]:
+                                    player_coins -= prices[weapon]
+                                    owned_weapons.append(weapon)
+                                    print(f"Koupeno: {weapon}")
+                                else:
+                                    print("Nedostatek mincí!")
+                            else:
+                                equipped_weapon = weapon
+                                print(f"Vybaveno: {weapon}")
+                else:                
+                
+                    if x1 <= x <= x1 + 100:
+                        if y1 <= y <= y1 + 100:
+                            print("Spuštění hry")
+                            return
+                        elif y2 <= y <= y2 + 100:
+                            print("Nastavení")
+            # Druhý sloupec (x2)
+                    elif x2 <= x <= x2 + 100:
+                        if y1 <= y <= y1 + 100:
+                            print("Obchod")
+                            shop_open = not shop_open
+                            if shop_open and WIDTH // 2 + 290 <= x <= WIDTH // 2 + 340 and HEIGHT // 2 - 240 <= y <= HEIGHT // 2 - 190:
+                                shop_open = False
+                        elif y2 <= y <= y2 + 100:
+                            pygame.quit()
+                            exit()
+                            # Zavření obchodu            
                 if shop_open and WIDTH // 2 + 290 <= x <= WIDTH // 2 + 340 and HEIGHT // 2 - 240 <= y <= HEIGHT // 2 - 190:
                     shop_open = False
 
