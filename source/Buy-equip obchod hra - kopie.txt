@@ -1,0 +1,138 @@
+import pygame 
+import random
+
+# Inicializace Pygame
+pygame.init()
+
+# Nastavení okna
+WIDTH, HEIGHT = 1800, 1000
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Zombie Shooter")
+
+# Barvy
+BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
+RED = (255, 0, 0)
+GREEN = (0, 255, 0)
+YELLOW = (232, 215, 10)
+BLUE = (10, 111, 232)
+
+# Font
+font = pygame.font.Font(None, 54)
+
+# Načtení textur tlačítek
+button_size = (100, 100)  # Čtvercová tlačítka 100x100 px
+button_textures = {
+    "play": pygame.image.load("Play.png"),
+    "shop": pygame.image.load("Market.png"),
+    "settings": pygame.image.load("Settings.png"),
+    "exit": pygame.image.load("Quit.png")
+}
+
+# Změna velikosti textur na čtverce
+for key in button_textures:
+    button_textures[key] = pygame.transform.scale(button_textures[key], button_size)
+
+# Načtení textur zbraní
+weapon_textures = {
+    "Shotgun": pygame.image.load("shotgun.png"),
+    "Assault Rifle": pygame.image.load("assault_rifle.png"),
+    "Minigun": pygame.image.load("minigun.png")
+}
+for key in weapon_textures:
+    weapon_textures[key] = pygame.transform.scale(weapon_textures[key], (100, 50))
+
+# Ceny zbraní
+weapons = ["Shotgun", "Assault Rifle", "Minigun"]
+prices = {"Shotgun": 500, "Assault Rifle": 1000, "Minigun": 2000}
+player_coins = 1500
+owned_weapons = []
+equipped_weapon = None
+
+shop_open = False
+
+menu_background = pygame.image.load("Backgroundfinal.png")
+menu_background = pygame.transform.scale(menu_background, (WIDTH, HEIGHT))
+
+def draw_button(texture, x, y):
+    screen.blit(texture, (x, y))
+
+def draw_shop():
+    overlay_width, overlay_height = 700, 500
+    overlay = pygame.Surface((overlay_width, overlay_height))
+    overlay.set_alpha(200)
+    overlay.fill((50, 50, 50))
+    screen.blit(overlay, (WIDTH // 2 - overlay_width // 2, HEIGHT // 2 - overlay_height // 2))
+    
+    text_surface = font.render("SHOP", True, WHITE)
+    screen.blit(text_surface, (WIDTH // 2 - 50, HEIGHT // 2 - overlay_height // 2 + 20))
+    
+    for i, weapon in enumerate(weapons):
+        y_offset = HEIGHT // 2 - overlay_height // 2 + 100 + i * 100
+        screen.blit(weapon_textures[weapon], (WIDTH // 2 - 250, y_offset))
+        text_surface = font.render(f"{weapon}: {prices[weapon]} coins", True, WHITE)
+        screen.blit(text_surface, (WIDTH // 2 - 100, y_offset))
+        
+        button_text = "Buy" if weapon not in owned_weapons else "Equip"
+        button_color = GREEN if weapon not in owned_weapons else BLUE
+        pygame.draw.rect(screen, button_color, (WIDTH // 2 + 150, y_offset, 100, 40))
+        button_surface = font.render(button_text, True, WHITE)
+        screen.blit(button_surface, (WIDTH // 2 + 160, y_offset + 5))
+
+def main_menu():
+    global shop_open, player_coins, equipped_weapon
+    while True:
+        screen.blit(menu_background, (0, 0))
+        
+        x1 = WIDTH - 850
+        x2 = WIDTH - 650
+        y1 = HEIGHT // 2 - 0
+        y2 = HEIGHT // 2 + 140
+
+        draw_button(button_textures["play"], x1, y1)
+        draw_button(button_textures["shop"], x2, y1)
+        draw_button(button_textures["settings"], x1, y2)
+        draw_button(button_textures["exit"], x2, y2)
+        
+        if shop_open:
+            draw_shop()
+        
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                x, y = event.pos
+                if shop_open:
+                    for i, weapon in enumerate(weapons):
+                        y_offset = HEIGHT // 2 - 250 + 100 + i * 100
+                        if WIDTH // 2 + 150 <= x <= WIDTH // 2 + 250 and y_offset <= y <= y_offset + 40:
+                            if weapon not in owned_weapons:
+                                if player_coins >= prices[weapon]:
+                                    player_coins -= prices[weapon]
+                                    owned_weapons.append(weapon)
+                                    print(f"Koupeno: {weapon}")
+                                else:
+                                    print("Nedostatek mincí!")
+                            else:
+                                equipped_weapon = weapon
+                                print(f"Vybaveno: {weapon}")
+                else:
+                    if x1 <= x <= x1 + 100:
+                        if y1 <= y <= y1 + 100:
+                            print("Spuštění hry")
+                            return
+                        elif y2 <= y <= y2 + 100:
+                            print("Nastavení")
+                    elif x2 <= x <= x2 + 100:
+                        if y1 <= y <= y1 + 100:
+                            print("Obchod")
+                            shop_open = True
+                        elif y2 <= y <= y2 + 100:
+                            pygame.quit()
+                            exit()
+
+main_menu()
