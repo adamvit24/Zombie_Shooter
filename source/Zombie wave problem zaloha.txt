@@ -1,0 +1,48 @@
+# Parametry nepřátel
+enemy_speed = 3
+enemies = []
+wave = 1
+spawned_zombies = 0
+zombies_per_wave = 15
+zombies_per_spawn = 3
+spawn_timer = 2
+spawn_interval = 60 # Počet snímků mezi spawnem další skupiny
+def spawn_enemies(count):
+    global spawned_zombies
+    safe_distance = 150  # Větší minimální vzdálenost od hráče
+    for _ in range(count):
+        if spawned_zombies < zombies_per_wave:
+            while True:
+                enemy_x = random.randint(0, WIDTH - enemy_width)
+                enemy_y = random.randint(0, HEIGHT - enemy_height)
+                # Kontrola, zda je zombík dostatečně daleko od hráče
+                if abs(enemy_x - player_x) > safe_distance and abs(enemy_y - player_y) > safe_distance:
+                    # Kontrola, zda místo není obsazeno překážkou
+                    zombie_rect = pygame.Rect(enemy_x, enemy_y, enemy_width, enemy_height)
+                    collision_with_obstacle = False
+                    for obstacle in obstacles:# Parametry nepřátel
+enemy_speed = 3
+enemies = []
+wave = 1
+spawned_zombies = 0
+zombies_per_wave = 15
+zombies_per_spawn = 3
+spawn_timer = 2
+spawn_interval = 60 # Počet snímků mezi spawnem další skupiny
+def spawn_enemies(count):
+    global spawned_zombies
+    safe_distance = 150  # Větší minimální vzdálenost od hráče
+    for _ in range(count):
+        if spawned_zombies < zombies_per_wave:
+            while True:
+                enemy_x = random.randint(0, WIDTH - enemy_width)
+                enemy_y = random.randint(0, HEIGHT - enemy_height)
+                # Kontrola, zda je zombík dostatečně daleko od hráče
+                if abs(enemy_x - player_x) > s
+                        if zombie_rect.colliderect(obstacle):
+                            collision_with_obstacle = True
+                            break
+                    if not collision_with_obstacle:
+                        enemies.append({"x": enemy_x, "y": enemy_y, "alive": True, "frame": 0, "direction": "right"})
+                        spawned_zombies += 1
+                        break
