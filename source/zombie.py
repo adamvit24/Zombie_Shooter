@@ -55,34 +55,34 @@ owned_weapons = []
 equipped_weapon = None
     
 def draw_shop():
-        overlay_width, overlay_height = 700, 500  # Zvětšení overlay okna
-        overlay = pygame.Surface((overlay_width, overlay_height))  # Vytvoříme poloprůhledný obdélník
-        overlay.set_alpha(200)  # Nastavíme průhlednost (0-255)
-        overlay.fill((50, 50, 50))  # Šedá barva
-        screen.blit(overlay, (WIDTH // 2 - overlay_width // 2, HEIGHT // 2 - overlay_height // 2))  # Umístění overlaye
-            
-            # Vykreslení textů a mezer
-        text_surface = font.render("SHOP", True, WHITE)
-        screen.blit(text_surface, (WIDTH // 2 - 50, HEIGHT // 2 - overlay_height // 2 + 20))
-            
-            # Vykreslení zbraní a cen s většími mezerami
-        for i, weapon in enumerate(weapons):
-            y_offset = HEIGHT // 2 - overlay_height // 2 + 100 + i * 100
-            screen.blit(weapon_textures[weapon], (WIDTH // 2 - 250, y_offset))
-            text_surface = font.render(f"{weapon}: {prices[weapon]} coins", True, WHITE)
-            screen.blit(text_surface, (WIDTH // 2 - 100, y_offset))
-            
-            button_text = "Buy" if weapon not in owned_weapons else "Equip"
-            button_color = GREEN if weapon not in owned_weapons else BLUE
-            pygame.draw.rect(screen, button_color, (WIDTH // 2 + 150, y_offset, 100, 40))
-            button_surface = font.render(button_text, True, WHITE)
-            screen.blit(button_surface, (WIDTH // 2 + 160, y_offset + 5))            
-   
-                   # Tlačítko pro zavření obchodu
-            close_button = pygame.Surface((50, 50))
-            close_button.fill(RED)
-            screen.blit(close_button, (WIDTH // 2 + overlay_width // 2 - 60, HEIGHT // 2 - overlay_height // 2 + 10))
-            pygame.display.update()
+    overlay_width, overlay_height = 700, 500  # Zvětšení overlay okna
+    overlay = pygame.Surface((overlay_width, overlay_height))  # Vytvoříme poloprůhledný obdélník
+    overlay.set_alpha(200)  # Nastavíme průhlednost (0-255)
+    overlay.fill((50, 50, 50))  # Šedá barva
+    screen.blit(overlay, (WIDTH // 2 - overlay_width // 2, HEIGHT // 2 - overlay_height // 2))  # Umístění overlaye
+        
+    # Vykreslení textů a mezer
+    text_surface = font.render("SHOP", True, WHITE)
+    screen.blit(text_surface, (WIDTH // 2 - 50, HEIGHT // 2 - overlay_height // 2 + 20))
+        
+    # Vykreslení zbraní a cen s většími mezerami
+    for i, weapon in enumerate(weapons):
+        y_offset = HEIGHT // 2 - overlay_height // 2 + 100 + i * 100
+        screen.blit(weapon_textures[weapon], (WIDTH // 2 - 250, y_offset))
+        text_surface = font.render(f"{weapon}: {prices[weapon]} coins", True, WHITE)
+        screen.blit(text_surface, (WIDTH // 2 - 100, y_offset))
+        
+        button_text = "Buy" if weapon not in owned_weapons else "Equip"
+        button_color = GREEN if weapon not in owned_weapons else BLUE
+        pygame.draw.rect(screen, button_color, (WIDTH // 2 + 150, y_offset, 100, 40))
+        button_surface = font.render(button_text, True, WHITE)
+        screen.blit(button_surface, (WIDTH // 2 + 160, y_offset + 5))            
+
+    # Tlačítko pro zavření obchodu
+    close_button = pygame.Surface((50, 50))
+    close_button.fill(RED)
+    screen.blit(close_button, (WIDTH // 2 + overlay_width // 2 - 60, HEIGHT // 2 - overlay_height // 2 + 10))
+    pygame.display.update()
    
 shop_open = False
     
@@ -229,6 +229,13 @@ player_speed = 8
 player_direction = "down"
 player_frame = 0
 
+# NOVÉ: Přidání systému životů pro hráče
+player_max_health = 5
+player_health = player_max_health
+player_hit_cooldown = 0  # Cooldown po zásahu (v počtu snímků)
+player_invulnerable_time = 60  # 60 snímků = přibližně 2 sekundy při 30 FPS
+player_hit_flash = False  # Pro vizuální efekt po zásahu
+
 # Parametry nepřátel
 enemy_speed = 3
 enemies = []
@@ -238,6 +245,8 @@ zombies_per_wave = 15
 zombies_per_spawn = 3
 spawn_timer = 2
 spawn_interval = 60 # Počet snímků mezi spawnem další skupiny
+
+# NOVÉ: Přidání zdraví nepřátelům
 def spawn_enemies(count):
     global spawned_zombies
     safe_distance = 150  # Větší minimální vzdálenost od hráče
@@ -256,7 +265,15 @@ def spawn_enemies(count):
                             collision_with_obstacle = True
                             break
                     if not collision_with_obstacle:
-                        enemies.append({"x": enemy_x, "y": enemy_y, "alive": True, "frame": 0, "direction": "right"})
+                        # NOVÉ: Přidání zdraví pro zombíky (3 hity)
+                        enemies.append({
+                            "x": enemy_x, 
+                            "y": enemy_y, 
+                            "alive": True, 
+                            "frame": 0, 
+                            "direction": "right",
+                            "health": 1  # Zombie potřebuje 3 zásahy
+                        })
                         spawned_zombies += 1
                         break
                 
@@ -315,9 +332,43 @@ def spawn_miniboss():
             "alive": True,
             "health": miniboss_health,
             "frame": 0,
-            "direction": "right"
+            "direction": "right",
+            "damage": 2  # NOVÉ: Miniboss odebere 2 hity při kolizi
         }
         return miniboss
+
+# NOVÉ: Funkce pro vykreslení health baru
+def draw_health_bar():
+    bar_width = 300
+    bar_height = 30
+    border_width = 2
+    
+    # Pozice health baru (v levém horním rohu, pod textem vlny)
+    x, y = 50, 120
+    
+    # Vykreslení rámečku health baru
+    pygame.draw.rect(screen, WHITE, (x - border_width, y - border_width, 
+                                    bar_width + 2*border_width, bar_height + 2*border_width))
+    
+    # Vykreslení pozadí health baru
+    pygame.draw.rect(screen, BLACK, (x, y, bar_width, bar_height))
+    
+    # Výpočet aktuální šířky health baru
+    current_bar_width = int(bar_width * (player_health / player_max_health))
+    
+    # Barva health baru v závislosti na zbývajícím zdraví
+    bar_color = GREEN
+    if player_health < player_max_health * 0.7:
+        bar_color = YELLOW
+    if player_health < player_max_health * 0.3:
+        bar_color = RED
+    
+    # Vykreslení aktuálního zdraví
+    pygame.draw.rect(screen, bar_color, (x, y, current_bar_width, bar_height))
+    
+    # Vykreslení textu se zdravím
+    health_text = font.render(f"{int(player_health)}/{player_max_health}", True, WHITE)
+    screen.blit(health_text, (x + bar_width + 20, y))
 
 # Hlavní smyčka
 running = True
@@ -329,6 +380,14 @@ while running:
     pygame.time.delay(30)  # Zpomalení smyčky
     frame_counter += 1
     moving = False
+    
+    # NOVÉ: Aktualizace cooldownu po zásahu
+    if player_hit_cooldown > 0:
+        player_hit_cooldown -= 1
+        # Blikání hráče během invulnerability
+        player_hit_flash = (frame_counter % 6) < 3
+    else:
+        player_hit_flash = False
     
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -379,11 +438,16 @@ while running:
                     miniboss["direction"] = "up"
                 miniboss["frame"] = (frame_counter // 10) % 3
 
-                if (miniboss["x"] < player_x + player_width and
-                    miniboss["x"] + miniboss_width > player_x and
-                    miniboss["y"] < player_y + player_height and
-                    miniboss["y"] + miniboss_height > player_y):
-                    game_over = True
+                # ZMĚNĚNO: Kolize s minibossem dává poškození místo okamžitého konce hry
+                miniboss_rect = pygame.Rect(miniboss["x"], miniboss["y"], miniboss_width, miniboss_height)
+                player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+                
+                if miniboss_rect.colliderect(player_rect) and player_hit_cooldown == 0:
+                    player_health -= miniboss["damage"]
+                    player_hit_cooldown = player_invulnerable_time
+                    
+                    if player_health <= 0:
+                        game_over = True
             else:
                 miniboss = None
                 miniboss_spawned = False
@@ -445,11 +509,16 @@ while running:
                     enemy["direction"] = "up"
                 enemy["frame"] = (frame_counter // 10) % 3
 
-                if (enemy["x"] < player_x + player_width and
-                    enemy["x"] + enemy_width > player_x and
-                    enemy["y"] < player_y + player_height and
-                    enemy["y"] + enemy_height > player_y):
-                    game_over = True
+                # ZMĚNĚNO: Kolize se zombíkem dává poškození místo okamžitého konce hry
+                enemy_rect = pygame.Rect(enemy["x"], enemy["y"], enemy_width, enemy_height)
+                player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+                
+                if enemy_rect.colliderect(player_rect) and player_hit_cooldown == 0:
+                    player_health -= 1  # Zombík dává 1 poškození
+                    player_hit_cooldown = player_invulnerable_time
+                    
+                    if player_health <= 0:
+                        game_over = True
             
 
         for bullet in bullets[:]:
@@ -461,7 +530,10 @@ while running:
                 if enemy["alive"]:
                     if (enemy["x"] < bullet["x"] < enemy["x"] + enemy_width and
                         enemy["y"] < bullet["y"] < enemy["y"] + enemy_height):
-                        enemy["alive"] = False
+                        # ZMĚNĚNO: Snížení zdraví zombie místo okamžitého zabití
+                        enemy["health"] -= 1
+                        if enemy["health"] <= 0:
+                            enemy["alive"] = False
                         hit = True
                         break
             if miniboss and miniboss["alive"]:
@@ -477,7 +549,18 @@ while running:
         bullets = [bullet for bullet in bullets if 0 < bullet["x"] < WIDTH and 0 < bullet["y"] < HEIGHT]
         
         screen.blit(background, (0, 0))
-        screen.blit(player_textures[player_direction][player_frame], (player_x, player_y))
+        
+        # ZMĚNĚNO: Podmínka pro vykreslení hráče s efektem blikání po zásahu
+        if not player_hit_flash:
+            screen.blit(player_textures[player_direction][player_frame], (player_x, player_y))
+        else:
+            # Vykreslení hráče s červeným nádechem při zásahu
+            player_img = player_textures[player_direction][player_frame].copy()
+            red_overlay = pygame.Surface(player_img.get_size()).convert_alpha()
+            red_overlay.fill((255, 0, 0, 128))  # Červená s průhledností
+            player_img.blit(red_overlay, (0, 0))
+            screen.blit(player_img, (player_x, player_y))
+            
         # Vykreslení překážek
         for obstacle in obstacles:
             screen.blit(obstacle_texture, (obstacle.x, obstacle.y))
@@ -493,24 +576,75 @@ while running:
                 else:
                     texture = enemy_textures["down"][enemy["frame"]]
                 screen.blit(texture, (enemy["x"], enemy["y"]))
+                
+                # NOVÉ: Vykreslení zdraví zombíka
+                zombie_health_width = 50
+                zombie_health_height = 5
+                pygame.draw.rect(screen, RED, (enemy["x"] + enemy_width//2 - zombie_health_width//2, 
+                                              enemy["y"] - 10, 
+                                              zombie_health_width, zombie_health_height))
+                
+                current_health_width = int(zombie_health_width * (enemy["health"] / 2))
+                pygame.draw.rect(screen, GREEN, (enemy["x"] + enemy_width//2 - zombie_health_width//2, 
+                                                enemy["y"] - 10, 
+                                                current_health_width, zombie_health_height))
             else:
                 screen.blit(enemy_texture_dead, (enemy["x"], enemy["y"]))
 
         if miniboss and miniboss["alive"]:
             miniboss_texture = miniboss_textures[miniboss["direction"]][miniboss["frame"]]
             screen.blit(miniboss_texture, (miniboss["x"], miniboss["y"]))
+            
+            # NOVÉ: Vykreslení zdraví minibosse
+            boss_health_width = 150
+            boss_health_height = 10
+            pygame.draw.rect(screen, RED, (miniboss["x"] + miniboss_width//2 - boss_health_width//2, 
+                                          miniboss["y"] - 20, 
+                                          boss_health_width, boss_health_height))
+            
+            current_health_width = int(boss_health_width * (miniboss["health"] / miniboss_health))
+            pygame.draw.rect(screen, GREEN, (miniboss["x"] + miniboss_width//2 - boss_health_width//2, 
+                                            miniboss["y"] - 20, 
+                                            current_health_width, boss_health_height))
 
         for bullet in bullets:
             pygame.draw.rect(screen, BLACK, (bullet["x"], bullet["y"], bullet_width, bullet_height))
+            
+        # NOVÉ: Vykreslení uživatelského rozhraní
+        wave_text = font.render(f"Wave: {wave}", True, WHITE)
+        screen.blit(wave_text, (50, 50))
+
+        # Vykreslení health baru hráče
+        draw_health_bar()
+
+        # Vykreslení počtu mincí
+        coins_text = font.render(f"Coins: {player_coins}", True, YELLOW)
+        screen.blit(coins_text, (WIDTH - 300, 50))
         
-        text = font.render(f"Wave: {wave}", True, WHITE)
-        screen.blit(text, (50, 50))
-    else:
-        font_big = pygame.font.Font(None, 74)
-        text = font_big.render("Prohrál jsi", True, RED)
-        screen.blit(text, (WIDTH // 2 - 100, HEIGHT // 2 - 50))
+        # Game over obrazovka
+    if game_over:
+        overlay = pygame.Surface((WIDTH, HEIGHT))
+        overlay.set_alpha(180)
+        overlay.fill(BLACK)
+        screen.blit(overlay, (0, 0))
+            
+        game_over_text = font.render("GAME OVER", True, RED)
+        score_text = font.render(f"Wave Reached: {wave}", True, WHITE)
+        restart_text = font.render("Press R to Restart or ESC to Quit", True, WHITE)
+            
+        screen.blit(game_over_text, (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - 100))
+        screen.blit(score_text, (WIDTH // 2 - score_text.get_width() // 2, HEIGHT // 2))
+        screen.blit(restart_text, (WIDTH // 2 - restart_text.get_width() // 2, HEIGHT // 2 + 100))
         
-        
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_ESCAPE]:
+            running = False
+        elif keys[pygame.K_r]:
+            running = False
+            main_menu()  
+            
+            
+            # Aktualizace obrazovky
     pygame.display.update()
     
 pygame.quit()	
