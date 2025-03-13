@@ -452,7 +452,7 @@ while running:
                 miniboss = None
                 miniboss_spawned = False
                 wave += 1
-                zombies_per_wave += 15
+                
 
         # Pohyb hráče, zombie, střel atd.
         keys = pygame.key.get_pressed()
