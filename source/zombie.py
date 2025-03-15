@@ -76,7 +76,7 @@ def draw_shop():
         button_color = GREEN if weapon not in owned_weapons else BLUE
         pygame.draw.rect(screen, button_color, (WIDTH // 2 + 150, y_offset, 100, 40))
         button_surface = font.render(button_text, True, WHITE)
-        screen.blit(button_surface, (WIDTH // 2 + 160, y_offset + 5))            
+        screen.blit(button_surface, (WIDTH // 2 + 160, y_offset + 5))
 
     # Tlačítko pro zavření obchodu
     close_button = pygame.Surface((50, 50))
@@ -85,16 +85,63 @@ def draw_shop():
     pygame.display.update()
    
 shop_open = False
+
+# Parametry postavy
+player = player_x, player_y = WIDTH // 2, HEIGHT // 2
+
+# Načtení textur hráče (animace pro všechny směry)
+player_textures = {
+    "right": [pygame.image.load(f"hracvpravo{i}.png") for i in range(1, 4)],
+    "left": [pygame.image.load(f"hracvlevo{i}.png") for i in range(1, 4)],
+    "up": [pygame.image.load(f"hracvzad{i}.png") for i in range(1, 4)],
+    "down": [pygame.image.load(f"hrac{i}.png") for i in range(1, 4)]
+}
+
+# Změna velikosti textur hráče
+player_width, player_height = 80, 120
+for direction in player_textures:
+    player_textures[direction] = [pygame.transform.scale(img, (player_width, player_height)) for img in player_textures[direction]]
+
+# Textury hráče se zbraněmi
+player_weapon_textures = {
+    "Shotgun": {
+        "right": [pygame.image.load(f"hrac_shotgun_vpravo{i}.png") for i in range(1, 4)],
+        "left": [pygame.image.load(f"hrac_shotgun_vlevo{i}.png") for i in range(1, 4)],
+        "up": [pygame.image.load(f"hrac_shotgun_vzad{i}.png") for i in range(1, 4)],
+        "down": [pygame.image.load(f"hrac_shotgun{i}.png") for i in range(1, 4)]
+    },
+    "Assault Rifle": {
+        "right": [pygame.image.load(f"hrac_rifle_vpravo{i}.png") for i in range(1, 4)],
+        "left": [pygame.image.load(f"hrac_rifle_vlevo{i}.png") for i in range(1, 4)],
+        "up": [pygame.image.load(f"hrac_rifle_vzad{i}.png") for i in range(1, 4)],
+        "down": [pygame.image.load(f"hrac_rifle{i}.png") for i in range(1, 4)]
+    },
+    "Minigun": {
+        "right": [pygame.image.load(f"hrac_minigun_vpravo{i}.png") for i in range(1, 4)],
+        "left": [pygame.image.load(f"hrac_minigun_vlevo{i}.png") for i in range(1, 4)],
+        "up": [pygame.image.load(f"hrac_minigun_vzad{i}.png") for i in range(1, 4)],
+        "down": [pygame.image.load(f"hrac_minigun{i}.png") for i in range(1, 4)]
+    }
+}
+
+# Změna velikosti textur hráče se zbraněmi
+for weapon in player_weapon_textures:
+    for direction in player_weapon_textures[weapon]:
+        player_weapon_textures[weapon][direction] = [pygame.transform.scale(img, (player_width, player_height)) for img in player_weapon_textures[weapon][direction]]
     
 menu_background = pygame.image.load("Backgroundfinal.png")  # Nahraď názvem souboru
 menu_background = pygame.transform.scale(menu_background, (WIDTH, HEIGHT))
 # Hlavní menu
 def main_menu():
+    global current_player_textures
+    global player_weapon_textures
     global shop_open
     global player_coins
     global equipped_weapon
     while True:
         screen.blit(menu_background, (0, 0))
+        coins_text = font.render(f"Coins: {player_coins}", True, YELLOW)
+        screen.blit(coins_text, (WIDTH - 300, 50))
          # Výpočet středu obrazovky
         x1 = WIDTH - 850  # První sloupec (víc vlevo)
         x2 = WIDTH - 650  # Druhý sloupec (víc vpravo)
@@ -132,6 +179,11 @@ def main_menu():
                                     print("Nedostatek mincí!")
                             else:
                                 equipped_weapon = weapon
+                                global current_player_textures
+                                if weapon in player_weapon_textures:
+                                    current_player_textures = player_weapon_textures[weapon]
+                                else:
+                                    current_player_textures = player_textures  
                                 print(f"Vybaveno: {weapon}")
                 else:                
                 
@@ -161,22 +213,9 @@ def main_menu():
 main_menu()
 
 
-# Načtení textur hráče (animace pro všechny směry)
-player_textures = {
-    "right": [pygame.image.load(f"hracvpravo{i}.png") for i in range(1, 4)],
-    "left": [pygame.image.load(f"hracvlevo{i}.png") for i in range(1, 4)],
-    "up": [pygame.image.load(f"hracvzad{i}.png") for i in range(1, 4)],
-    "down": [pygame.image.load(f"hrac{i}.png") for i in range(1, 4)]
-}
-
-# Změna velikosti textur hráče
-player_width, player_height = 80, 120
-for direction in player_textures:
-    player_textures[direction] = [pygame.transform.scale(img, (player_width, player_height)) for img in player_textures[direction]]
-
 # Načtení textur mapy
-background = pygame.image.load("airport.png")  # Nahraď názvem svého souboru
-background = pygame.transform.scale(background, (WIDTH, HEIGHT))  # Uprav velikost na rozlišení okna
+background = pygame.image.load("airport.png")  
+background = pygame.transform.scale(background, (WIDTH, HEIGHT)) 
 
 # Načtení textur nepřátel
 enemy_width, enemy_height = 80, 120
@@ -226,13 +265,14 @@ for direction in miniboss_textures:
 # Parametry postavy
 player = player_x, player_y = WIDTH // 2, HEIGHT // 2
 player_speed = 8
+current_player_textures = player_textures 
 player_direction = "down"
 player_frame = 0
 
-# NOVÉ: Přidání systému životů pro hráče
+# Přidání systému životů pro hráče
 player_max_health = 5
 player_health = player_max_health
-player_hit_cooldown = 0  # Cooldown po zásahu (v počtu snímků)
+player_hit_cooldown = 0 
 player_invulnerable_time = 60  # 60 snímků = přibližně 2 sekundy při 30 FPS
 player_hit_flash = False  # Pro vizuální efekt po zásahu
 
@@ -244,12 +284,12 @@ spawned_zombies = 0
 zombies_per_wave = 15
 zombies_per_spawn = 3
 spawn_timer = 2
-spawn_interval = 60 # Počet snímků mezi spawnem další skupiny
+spawn_interval = 60 
 
-# NOVÉ: Přidání zdraví nepřátelům
+# Spawnování nepřátel
 def spawn_enemies(count):
     global spawned_zombies
-    safe_distance = 150  # Větší minimální vzdálenost od hráče
+    safe_distance = 150  
     for _ in range(count):
         if spawned_zombies < zombies_per_wave:
             while True:
@@ -265,7 +305,7 @@ def spawn_enemies(count):
                             collision_with_obstacle = True
                             break
                     if not collision_with_obstacle:
-                        # NOVÉ: Přidání zdraví pro zombíky (3 hity)
+                        # Přidání zdraví pro zombíky (3 hity)
                         enemies.append({
                             "x": enemy_x, 
                             "y": enemy_y, 
@@ -333,11 +373,11 @@ def spawn_miniboss():
             "health": miniboss_health,
             "frame": 0,
             "direction": "right",
-            "damage": 2  # NOVÉ: Miniboss odebere 2 hity při kolizi
+            "damage": 2  
         }
         return miniboss
 
-# NOVÉ: Funkce pro vykreslení health baru
+# Funkce pro vykreslení health baru
 def draw_health_bar():
     bar_width = 300
     bar_height = 30
@@ -371,6 +411,12 @@ def draw_health_bar():
     screen.blit(health_text, (x + bar_width + 20, y))
 
 # Hlavní smyčka
+if equipped_weapon in player_weapon_textures:
+    current_player_textures = player_weapon_textures[equipped_weapon]
+    print(f"Nastavuji textury pro {equipped_weapon}")
+else:
+    current_player_textures = player_textures
+    print("Používám výchozí textury")
 running = True
 game_over = False
 frame_counter = 0
@@ -381,9 +427,9 @@ while running:
     frame_counter += 1
     moving = False
     
-    # NOVÉ: Aktualizace cooldownu po zásahu
+    # Aktualizace cooldownu po zásahu
     if player_hit_cooldown > 0:
-        player_hit_cooldown -= 1
+        player_hit_cooldown -= 2
         # Blikání hráče během invulnerability
         player_hit_flash = (frame_counter % 6) < 3
     else:
@@ -438,7 +484,7 @@ while running:
                     miniboss["direction"] = "up"
                 miniboss["frame"] = (frame_counter // 10) % 3
 
-                # ZMĚNĚNO: Kolize s minibossem dává poškození místo okamžitého konce hry
+                # Kolize s minibossem dává poškození místo okamžitého konce hry
                 miniboss_rect = pygame.Rect(miniboss["x"], miniboss["y"], miniboss_width, miniboss_height)
                 player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
                 
@@ -509,7 +555,7 @@ while running:
                     enemy["direction"] = "up"
                 enemy["frame"] = (frame_counter // 10) % 3
 
-                # ZMĚNĚNO: Kolize se zombíkem dává poškození místo okamžitého konce hry
+                # Kolize se zombíkem dává poškození místo okamžitého konce hry
                 enemy_rect = pygame.Rect(enemy["x"], enemy["y"], enemy_width, enemy_height)
                 player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
                 
@@ -530,7 +576,7 @@ while running:
                 if enemy["alive"]:
                     if (enemy["x"] < bullet["x"] < enemy["x"] + enemy_width and
                         enemy["y"] < bullet["y"] < enemy["y"] + enemy_height):
-                        # ZMĚNĚNO: Snížení zdraví zombie místo okamžitého zabití
+                        # Snížení zdraví zombie místo okamžitého zabití
                         enemy["health"] -= 1
                         if enemy["health"] <= 0:
                             enemy["alive"] = False
@@ -550,12 +596,12 @@ while running:
         
         screen.blit(background, (0, 0))
         
-        # ZMĚNĚNO: Podmínka pro vykreslení hráče s efektem blikání po zásahu
+        # Podmínka pro vykreslení hráče s efektem blikání po zásahu
         if not player_hit_flash:
-            screen.blit(player_textures[player_direction][player_frame], (player_x, player_y))
+            screen.blit(current_player_textures[player_direction][player_frame], (player_x, player_y))
         else:
             # Vykreslení hráče s červeným nádechem při zásahu
-            player_img = player_textures[player_direction][player_frame].copy()
+            player_img = current_player_textures[player_direction][player_frame].copy()
             red_overlay = pygame.Surface(player_img.get_size()).convert_alpha()
             red_overlay.fill((255, 0, 0, 128))  # Červená s průhledností
             player_img.blit(red_overlay, (0, 0))
@@ -577,7 +623,7 @@ while running:
                     texture = enemy_textures["down"][enemy["frame"]]
                 screen.blit(texture, (enemy["x"], enemy["y"]))
                 
-                # NOVÉ: Vykreslení zdraví zombíka
+                # Vykreslení zdraví zombíka
                 zombie_health_width = 50
                 zombie_health_height = 5
                 pygame.draw.rect(screen, RED, (enemy["x"] + enemy_width//2 - zombie_health_width//2, 
@@ -595,7 +641,7 @@ while running:
             miniboss_texture = miniboss_textures[miniboss["direction"]][miniboss["frame"]]
             screen.blit(miniboss_texture, (miniboss["x"], miniboss["y"]))
             
-            # NOVÉ: Vykreslení zdraví minibosse
+            # Vykreslení zdraví minibosse
             boss_health_width = 150
             boss_health_height = 10
             pygame.draw.rect(screen, RED, (miniboss["x"] + miniboss_width//2 - boss_health_width//2, 
@@ -610,7 +656,7 @@ while running:
         for bullet in bullets:
             pygame.draw.rect(screen, BLACK, (bullet["x"], bullet["y"], bullet_width, bullet_height))
             
-        # NOVÉ: Vykreslení uživatelského rozhraní
+        # Vykreslení uživatelského rozhraní
         wave_text = font.render(f"Wave: {wave}", True, WHITE)
         screen.blit(wave_text, (50, 50))
 
@@ -648,3 +694,4 @@ while running:
     pygame.display.update()
     
 pygame.quit()	
+
