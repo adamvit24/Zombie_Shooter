@@ -53,6 +53,14 @@ prices = {"Shotgun": 500, "Assault Rifle": 1000, "Minigun": 2000}
 player_coins = 3500
 owned_weapons = []
 equipped_weapon = None
+
+# Nastavení obtížnosti
+current_difficulty = "Normal"
+difficulty_settings = {
+    "Normal": {"zombies_per_wave": 15, "minibosses": 1},
+    "Hard": {"zombies_per_wave": 30, "minibosses": 1},
+    "Nightmare": {"zombies_per_wave": 45, "minibosses": 2}
+}
     
 def draw_shop():
     overlay_width, overlay_height = 700, 500  # Zvětšení overlay okna
@@ -86,6 +94,39 @@ def draw_shop():
    
 shop_open = False
 
+def draw_settings():
+    global current_difficulty
+    
+    overlay_width, overlay_height = 500, 400
+    overlay = pygame.Surface((overlay_width, overlay_height))
+    overlay.set_alpha(200)
+    overlay.fill((50, 50, 50))
+    screen.blit(overlay, (WIDTH // 2 - overlay_width // 2, HEIGHT // 2 - overlay_height // 2))
+    
+    # Nadpis
+    title_text = font.render("NASTAVENÍ", True, WHITE)
+    screen.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, HEIGHT // 2 - overlay_height // 2 + 30))
+    
+    # Tlačítka obtížnosti
+    difficulties = ["Normal", "Hard", "Nightmare"]
+    for i, diff in enumerate(difficulties):
+        y_pos = HEIGHT // 2 - overlay_height // 2 + 120 + i * 80
+        
+        # Barva tlačítka (zelené pro aktuální obtížnost)
+        button_color = GREEN if diff == current_difficulty else BLUE
+        
+        pygame.draw.rect(screen, button_color, (WIDTH // 2 - 150, y_pos, 300, 60))
+        diff_text = font.render(diff, True, WHITE)
+        screen.blit(diff_text, (WIDTH // 2 - diff_text.get_width() // 2, y_pos + 10))
+    
+    # Tlačítko pro zavření nastavení
+    close_button = pygame.Surface((50, 50))
+    close_button.fill(RED)
+    screen.blit(close_button, (WIDTH // 2 + overlay_width // 2 - 60, HEIGHT // 2 - overlay_height // 2 + 10))
+    pygame.display.update()
+
+settings_open = False
+    
 # Parametry postavy
 player = player_x, player_y = WIDTH // 2, HEIGHT // 2
 
@@ -138,6 +179,8 @@ def main_menu():
     global shop_open
     global player_coins
     global equipped_weapon
+    global current_difficulty
+    settings_open = False
     while True:
         screen.blit(menu_background, (0, 0))
         coins_text = font.render(f"Coins: {player_coins}", True, YELLOW)
@@ -156,6 +199,9 @@ def main_menu():
         
         if shop_open:
             draw_shop()
+            
+        if settings_open:
+            draw_settings()
 
         pygame.display.update()
 
@@ -166,6 +212,16 @@ def main_menu():
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 x, y = event.pos
+
+                difficulties = ["Normal", "Hard", "Nightmare"]
+                for i, diff in enumerate(difficulties):
+                    y_pos = HEIGHT // 2 - 200 + 120 + i * 80
+                    if WIDTH // 2 - 150 <= x <= WIDTH // 2 + 150 and y_pos <= y <= y_pos + 60:
+                        current_difficulty = diff
+                        print(f"Vybrána obtížnost: {diff}")
+                if WIDTH // 2 + 190 <= x <= WIDTH // 2 + 240 and HEIGHT // 2 - 200 <= y <= HEIGHT // 2 - 150:
+                    settings_open = False
+                    
                 if shop_open:
                     for i, weapon in enumerate(weapons):
                         y_offset = HEIGHT // 2 - 250 + 100 + i * 100
@@ -193,6 +249,7 @@ def main_menu():
                             return
                         elif y2 <= y <= y2 + 100:
                             print("Nastavení")
+                            settings_open = not settings_open
             # Druhý sloupec (x2)
                     elif x2 <= x <= x2 + 100:
                         if y1 <= y <= y1 + 100:
@@ -241,6 +298,7 @@ miniboss_textures = {
     "down": [pygame.image.load(f"miniboss{i}.png") for i in range(1, 4)]
 }
 
+
 # Načtení textur překážek
 obstacle_texture = pygame.image.load("Bedna.png")
 obstacle_size = (100, 100)
@@ -257,6 +315,7 @@ obstacles = [
 miniboss_width, miniboss_height = 200, 250
 miniboss_speed = 2
 miniboss_health = 20
+miniboss_list = []  # Seznam pro více minibossů
 
 # Změna velikosti textur minibosse
 for direction in miniboss_textures:
@@ -275,6 +334,24 @@ player_health = player_max_health
 player_hit_cooldown = 0 
 player_invulnerable_time = 60  # 60 snímků = přibližně 2 sekundy při 30 FPS
 player_hit_flash = False  # Pro vizuální efekt po zásahu
+
+# Power-upy
+powerups = []
+powerup_size = 30
+speed_boost_active = False
+speed_boost_duration = 300  # Trvání v počtu snímků (cca 10 sekund)
+speed_boost_timer = 0
+original_player_speed = player_speed
+
+# Načtení textur power-upů (přidej do sekce s načítáním textur)
+powerup_textures = {
+    "health": pygame.image.load("health_powerup.png"),  
+    "speed": pygame.image.load("speed_powerup.png")     
+}
+
+# Změna velikosti textur
+for key in powerup_textures:
+    powerup_textures[key] = pygame.transform.scale(powerup_textures[key], (powerup_size, powerup_size))
 
 # Parametry nepřátel
 enemy_speed = 3
@@ -347,6 +424,16 @@ def check_collision_miniboss(x, y, dx, dy):
             return False  # Kolize, pohyb není možný
     return True
 
+# Funkce pro generování power-upů
+def spawn_powerup(x, y):
+    if random.random() < 0.50:  # 5% šance
+        powerup_type = random.choice(["health", "speed"])
+        powerups.append({
+            "x": x,
+            "y": y,
+            "type": powerup_type,
+            "collected": False
+        })
 
 # Funkce pro spawn minibosse
 def spawn_miniboss():
@@ -409,6 +496,7 @@ def draw_health_bar():
     # Vykreslení textu se zdravím
     health_text = font.render(f"{int(player_health)}/{player_max_health}", True, WHITE)
     screen.blit(health_text, (x + bar_width + 20, y))
+    
 
 # Hlavní smyčka
 if equipped_weapon in player_weapon_textures:
@@ -417,6 +505,10 @@ if equipped_weapon in player_weapon_textures:
 else:
     current_player_textures = player_textures
     print("Používám výchozí textury")
+
+zombies_per_wave = difficulty_settings[current_difficulty]["zombies_per_wave"]
+minibosses_to_spawn = difficulty_settings[current_difficulty]["minibosses"]
+print(f"Spouštím hru na obtížnost: {current_difficulty}")  # Pro debug
 running = True
 game_over = False
 frame_counter = 0
@@ -426,6 +518,36 @@ while running:
     pygame.time.delay(30)  # Zpomalení smyčky
     frame_counter += 1
     moving = False
+    zombies_per_wave = difficulty_settings[current_difficulty]["zombies_per_wave"]
+    minibosses_to_spawn = difficulty_settings[current_difficulty]["minibosses"]
+    
+    # Zpracování power-upů
+    if speed_boost_active:
+        speed_boost_timer -= 1
+        if speed_boost_timer <= 0:
+            speed_boost_active = False
+            player_speed = original_player_speed
+            print("Speed boost skončil")
+
+    # Kolekce power-upů
+    for powerup in powerups[:]:
+        if not powerup["collected"]:
+            powerup_rect = pygame.Rect(powerup["x"], powerup["y"], powerup_size, powerup_size)
+            player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+        
+            if powerup_rect.colliderect(player_rect):
+                powerup["collected"] = True
+            
+                if powerup["type"] == "health":
+                    player_health = min(player_health + 1, player_max_health)
+                    print("Získáno +1 zdraví")
+                elif powerup["type"] == "speed":
+                    speed_boost_active = True
+                    speed_boost_timer = speed_boost_duration
+                    player_speed = int(original_player_speed * 1.25)  # 25% boost
+                    print("Získán speed boost")
+            
+                powerups.remove(powerup)
     
     # Aktualizace cooldownu po zásahu
     if player_hit_cooldown > 0:
@@ -460,46 +582,60 @@ while running:
                     spawn_enemies(zombies_per_spawn)
                     spawn_timer = frame_counter
             else:
-                # Pokud jsou všechny zombie mrtvé, spawnni miniboss
+                # Pokud jsou všechny zombie mrtvé, spawni miniboss
                 if all(not enemy["alive"] for enemy in enemies):
                     
-                    miniboss = spawn_miniboss()
+                    # Resetování minibossů
+                    miniboss = None
+                    miniboss_list = []
+                    
+                    # Spawn minibossů podle obtížnosti
+                    for _ in range(difficulty_settings[current_difficulty]["minibosses"]):
+                        new_miniboss = spawn_miniboss()
+                        if new_miniboss:
+                            miniboss_list.append(new_miniboss)
+                    
                     miniboss_spawned = True
                     enemies.clear()
                     spawned_zombies = 0
         else:
             # Zpracování minibosse, pokud existuje
-            if miniboss and miniboss["alive"]:
-                if miniboss["x"] < player_x and check_collision_miniboss(miniboss["x"], miniboss["y"], miniboss_speed, 0):
-                    miniboss["x"] += miniboss_speed
-                    miniboss["direction"] = "right"
-                elif miniboss["x"] > player_x and check_collision_miniboss(miniboss["x"], miniboss["y"], -miniboss_speed, 0):
-                    miniboss["x"] -= miniboss_speed
-                    miniboss["direction"] = "left"
-                if miniboss["y"] < player_y and check_collision_miniboss(miniboss["x"], miniboss["y"], 0, miniboss_speed):
-                    miniboss["y"] += miniboss_speed
-                    miniboss["direction"] = "down"
-                elif miniboss["y"] > player_y and check_collision_miniboss(miniboss["x"], miniboss["y"], 0, -miniboss_speed):
-                    miniboss["y"] -= miniboss_speed
-                    miniboss["direction"] = "up"
-                miniboss["frame"] = (frame_counter // 10) % 3
+            if miniboss_spawned:
+                all_minibosses_dead = True
+    
+                for mb in miniboss_list[:]:
+                    if mb["alive"]:
+                        all_minibosses_dead = False
+                        if mb["x"] < player_x and check_collision_miniboss(mb["x"], mb["y"], miniboss_speed, 0):
+                            mb["x"] += miniboss_speed
+                            mb["direction"] = "right"
+                        elif mb["x"] > player_x and check_collision_miniboss(mb["x"], mb["y"], -miniboss_speed, 0):
+                            mb["x"] -= miniboss_speed
+                            mb["direction"] = "left"
+                        if mb["y"] < player_y and check_collision_miniboss(mb["x"], mb["y"], 0, miniboss_speed):
+                            mb["y"] += miniboss_speed
+                            mb["direction"] = "down"
+                        elif mb["y"] > player_y and check_collision_miniboss(mb["x"], mb["y"], 0, -miniboss_speed):
+                            mb["y"] -= miniboss_speed
+                            mb["direction"] = "up"
+                        mb["frame"] = (frame_counter // 10) % 3
 
-                # Kolize s minibossem dává poškození místo okamžitého konce hry
-                miniboss_rect = pygame.Rect(miniboss["x"], miniboss["y"], miniboss_width, miniboss_height)
-                player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
+                        # Kolize s minibossem dává poškození místo okamžitého konce hry
+                        miniboss_rect = pygame.Rect(mb["x"], mb["y"], miniboss_width, miniboss_height)
+                        player_rect = pygame.Rect(player_x, player_y, player_width, player_height)
                 
-                if miniboss_rect.colliderect(player_rect) and player_hit_cooldown == 0:
-                    player_health -= miniboss["damage"]
-                    player_hit_cooldown = player_invulnerable_time
+                        if miniboss_rect.colliderect(player_rect) and player_hit_cooldown == 0:
+                            player_health -= mb["damage"]
+                            player_hit_cooldown = player_invulnerable_time
                     
-                    if player_health <= 0:
-                        game_over = True
-            else:
-                miniboss = None
-                miniboss_spawned = False
-                wave += 1
+                            if player_health <= 0:
+                                game_over = True
+                        
+                if all_minibosses_dead:
+                    miniboss_list = []
+                    miniboss_spawned = False
+                    wave += 1
                 
-
         # Pohyb hráče, zombie, střel atd.
         keys = pygame.key.get_pressed()
         if keys[pygame.K_UP]:
@@ -580,15 +716,17 @@ while running:
                         enemy["health"] -= 1
                         if enemy["health"] <= 0:
                             enemy["alive"] = False
+                            spawn_powerup(enemy["x"], enemy["y"])
                         hit = True
                         break
-            if miniboss and miniboss["alive"]:
-                if (miniboss["x"] < bullet["x"] < miniboss["x"] + miniboss_width and
-                    miniboss["y"] < bullet["y"] < miniboss["y"] + miniboss_height):
-                    miniboss["health"] -= 1
-                    hit = True
-                    if miniboss["health"] <= 0:
-                        miniboss["alive"] = False
+            for mb in miniboss_list:
+                if mb["alive"]:
+                    if (mb["x"] < bullet["x"] < mb["x"] + miniboss_width and
+                        mb["y"] < bullet["y"] < mb["y"] + miniboss_height):
+                        mb["health"] -= 1
+                        hit = True
+                        if mb["health"] <= 0:
+                            mb["alive"] = False
             if hit and bullet in bullets:
                 bullets.remove(bullet)
 
@@ -610,6 +748,11 @@ while running:
         # Vykreslení překážek
         for obstacle in obstacles:
             screen.blit(obstacle_texture, (obstacle.x, obstacle.y))
+            
+        # Vykreslení power-upů
+        for powerup in powerups:
+            if not powerup["collected"]:
+                screen.blit(powerup_textures[powerup["type"]], (powerup["x"], powerup["y"]))
 
         for enemy in enemies:
             if enemy["alive"]:
@@ -637,21 +780,22 @@ while running:
             else:
                 screen.blit(enemy_texture_dead, (enemy["x"], enemy["y"]))
 
-        if miniboss and miniboss["alive"]:
-            miniboss_texture = miniboss_textures[miniboss["direction"]][miniboss["frame"]]
-            screen.blit(miniboss_texture, (miniboss["x"], miniboss["y"]))
-            
-            # Vykreslení zdraví minibosse
-            boss_health_width = 150
-            boss_health_height = 10
-            pygame.draw.rect(screen, RED, (miniboss["x"] + miniboss_width//2 - boss_health_width//2, 
-                                          miniboss["y"] - 20, 
-                                          boss_health_width, boss_health_height))
-            
-            current_health_width = int(boss_health_width * (miniboss["health"] / miniboss_health))
-            pygame.draw.rect(screen, GREEN, (miniboss["x"] + miniboss_width//2 - boss_health_width//2, 
-                                            miniboss["y"] - 20, 
-                                            current_health_width, boss_health_height))
+        for mb in miniboss_list:
+            if mb["alive"]:
+                miniboss_texture = miniboss_textures[mb["direction"]][mb["frame"]]
+                screen.blit(miniboss_texture, (mb["x"], mb["y"]))
+                
+                        # Vykreslení zdraví minibosse
+                boss_health_width = 150
+                boss_health_height = 10
+                pygame.draw.rect(screen, RED, (mb["x"] + miniboss_width//2 - boss_health_width//2, 
+                                                mb["y"] - 20, 
+                                                boss_health_width, boss_health_height))
+                        
+                current_health_width = int(boss_health_width * (mb["health"] / miniboss_health))
+                pygame.draw.rect(screen, GREEN, (mb["x"] + miniboss_width//2 - boss_health_width//2, 
+                                                mb["y"] - 20, 
+                                                current_health_width, boss_health_height))
 
         for bullet in bullets:
             pygame.draw.rect(screen, BLACK, (bullet["x"], bullet["y"], bullet_width, bullet_height))
@@ -666,6 +810,18 @@ while running:
         # Vykreslení počtu mincí
         coins_text = font.render(f"Coins: {player_coins}", True, YELLOW)
         screen.blit(coins_text, (WIDTH - 300, 50))
+        
+        # indikátor aktivního speed boostu
+        if speed_boost_active:
+            boost_text = font.render("SPEED BOOST", True, WHITE)
+            screen.blit(boost_text, (WIDTH - 370, 100))
+    
+            # Indikátor zbývajícího času
+            boost_bar_width = 200
+            boost_bar_height = 10
+            current_width = int(boost_bar_width * (speed_boost_timer / speed_boost_duration))
+            pygame.draw.rect(screen, WHITE, (WIDTH - 300, 150, current_width, boost_bar_height))
+        
         
         # Game over obrazovka
     if game_over:
