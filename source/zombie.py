@@ -426,7 +426,7 @@ def check_collision_miniboss(x, y, dx, dy):
 
 # Funkce pro generování power-upů
 def spawn_powerup(x, y):
-    if random.random() < 0.50:  # 5% šance
+    if random.random() < 0.05:  # 5% šance
         powerup_type = random.choice(["health", "speed"])
         powerups.append({
             "x": x,
